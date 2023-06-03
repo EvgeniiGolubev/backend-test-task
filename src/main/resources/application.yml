@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/social_media
+    username: ${username}
+    password: ${password}
+  jpa:
+    generate-ddl: true
+    show-sql: false
+
+jwt:
+  cookieName: jwtToken
+  secret: ${secretKey}
+  expiration: 86400
+
+upload:
+  path: ${uploadPath}
+
+server:
+  port: 8080
