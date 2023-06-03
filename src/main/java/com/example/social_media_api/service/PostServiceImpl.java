@@ -1,13 +1,12 @@
 package com.example.social_media_api.service;
 
-import com.example.social_media_api.domain.dto.ArticleDto;
-import com.example.social_media_api.domain.entity.Article;
+import com.example.social_media_api.domain.dto.PostDto;
+import com.example.social_media_api.domain.entity.Post;
 import com.example.social_media_api.domain.entity.Role;
 import com.example.social_media_api.domain.entity.User;
 import com.example.social_media_api.exception.AccessDeniedException;
-import com.example.social_media_api.exception.ArticleNotFoundException;
-import com.example.social_media_api.repository.ArticleRepository;
-import com.example.social_media_api.repository.UserSubscriptionRepository;
+import com.example.social_media_api.exception.PostNotFoundException;
+import com.example.social_media_api.repository.PostRepository;
 import com.example.social_media_api.security.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,101 +24,101 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public class ArticleServiceImpl implements ArticleService {
+public class PostServiceImpl implements PostService {
 
     @Value("${upload.path}")
     private String uploadPath;
-    private final ArticleRepository articleRepository;
+    private final PostRepository postRepository;
     private final UserService userService;
 
     @Autowired
-    public ArticleServiceImpl(ArticleRepository articleRepository, UserService userService) {
-        this.articleRepository = articleRepository;
+    public PostServiceImpl(PostRepository postRepository, UserService userService) {
+        this.postRepository = postRepository;
         this.userService = userService;
     }
 
     @Override
-    public List<ArticleDto> findAllArticles() {
-        return articleRepository.findAll().stream()
-                .map(ArticleDto::new)
+    public List<PostDto> findAllPosts() {
+        return postRepository.findAll().stream()
+                .map(PostDto::new)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Page<ArticleDto> getArticlesBySubscriber(UserDetailsImpl user, String sortType, int page, int pageSize)
+    public Page<PostDto> getPostsBySubscriber(UserDetailsImpl user, String sortType, int page, int pageSize)
             throws IllegalArgumentException {
-        User userFromDb = userService.findUserByEmail(user.getUsername());
+        User userFromDb = userService.getUserFromUserDetails(user);
 
         Sort sort = validPaginationAndGetSort(sortType, page, pageSize);
         Pageable pageable = PageRequest.of(page, pageSize, sort);
 
-        Page<Article> resultPage = articleRepository.findArticlesBySubscribedUsersSortedByDate(userFromDb.getId(), pageable);
-        return resultPage.map(ArticleDto::new);
+        Page<Post> resultPage = postRepository.findPostsBySubscribedUsersSortedByDate(userFromDb.getId(), pageable);
+        return resultPage.map(PostDto::new);
     }
 
     @Override
-    public ArticleDto findArticlesById(Long id) throws ArticleNotFoundException {
-        Article articleFromDb = checkArticlePresentAndGet(id);
+    public PostDto findPostById(Long id) throws PostNotFoundException {
+        Post postFromDb = checkPostPresentAndGet(id);
 
-        return new ArticleDto(articleFromDb);
+        return new PostDto(postFromDb);
     }
 
     @Override
-    public ArticleDto createArticle(ArticleDto article, MultipartFile image, UserDetailsImpl author)
+    public PostDto createPost(PostDto post, MultipartFile image, UserDetailsImpl author)
             throws IOException, IllegalArgumentException {
 
-        validArticleFields(article);
+        validPostFields(post);
 
-        User userAuthor = userService.findUserByEmail(author.getUsername());
+        User userAuthor = userService.getUserFromUserDetails(author);
 
         String imageLink = saveFileAndGetLink(image);
 
-        Article newArticle = new Article(
-                article.getTitle(),
-                article.getContent(),
+        Post newPost = new Post(
+                post.getTitle(),
+                post.getContent(),
                 imageLink,
                 userAuthor,
                 LocalDateTime.now()
         );
 
-        return new ArticleDto(articleRepository.save(newArticle));
+        return new PostDto(postRepository.save(newPost));
     }
 
     @Override
-    public ArticleDto updateArticle(Long id, ArticleDto article, MultipartFile image, UserDetailsImpl author)
-            throws AccessDeniedException, ArticleNotFoundException, IOException, IllegalArgumentException {
+    public PostDto updatePost(Long id, PostDto post, MultipartFile image, UserDetailsImpl author)
+            throws AccessDeniedException, PostNotFoundException, IOException, IllegalArgumentException {
 
-        validArticleFields(article);
+        validPostFields(post);
 
-        Article articleFromDb = checkArticlePresentAndGet(id);
+        Post postFromDb = checkPostPresentAndGet(id);
 
-        checkAccess(articleFromDb, author);
+        checkAccess(postFromDb, author);
 
         String imageLink = saveFileAndGetLink(image);
         if (imageLink == null) {
-            imageLink = article.getImageLink();
+            imageLink = post.getImageLink();
         } else {
-            deleteFile(article.getImageLink());
+            deleteFile(post.getImageLink());
         }
 
-        articleFromDb.setTitle(article.getTitle());
-        articleFromDb.setContent(article.getContent());
-        articleFromDb.setImageLink(imageLink);
+        postFromDb.setTitle(post.getTitle());
+        postFromDb.setContent(post.getContent());
+        postFromDb.setImageLink(imageLink);
 
-        return new ArticleDto(articleRepository.save(articleFromDb));
+        return new PostDto(postRepository.save(postFromDb));
     }
 
     @Override
-    public void deleteArticle(Long id, UserDetailsImpl author)
-            throws AccessDeniedException, ArticleNotFoundException, IOException {
+    public void deletePost(Long id, UserDetailsImpl author)
+            throws AccessDeniedException, PostNotFoundException, IOException {
 
-        Article articleFromDb = checkArticlePresentAndGet(id);
+        Post postFromDb = checkPostPresentAndGet(id);
 
-        checkAccess(articleFromDb, author);
+        checkAccess(postFromDb, author);
 
-        deleteFile(articleFromDb.getImageLink());
+        deleteFile(postFromDb.getImageLink());
 
-        articleRepository.delete(articleFromDb);
+        postRepository.delete(postFromDb);
     }
 
     private String saveFileAndGetLink(MultipartFile image) throws IOException, IllegalArgumentException {
@@ -146,34 +145,36 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     private void deleteFile(String filename) throws IOException {
-        Path filePath = Paths.get(uploadPath, filename);
-        if (Files.exists(filePath)) {
-            Files.delete(filePath);
+        if (filename != null) {
+            Path filePath = Paths.get(uploadPath, filename);
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+            }
         }
     }
 
-    private Article checkArticlePresentAndGet(Long id) throws ArticleNotFoundException {
-        Article articleFromDb = articleRepository.findById(id).orElse(null);
+    private Post checkPostPresentAndGet(Long id) throws PostNotFoundException {
+        Post postFromDb = postRepository.findById(id).orElse(null);
 
-        if (articleFromDb == null) {
-            throw new ArticleNotFoundException("Article not found!");
+        if (postFromDb == null) {
+            throw new PostNotFoundException("Post not found!");
         }
 
-        return articleFromDb;
+        return postFromDb;
     }
 
-    private void checkAccess(Article articleFromDb, UserDetailsImpl author) throws AccessDeniedException{
-        User userAuthor = userService.findUserByEmail(author.getUsername());
-        User actualAuthor = articleFromDb.getAuthor();
+    private void checkAccess(Post post, UserDetailsImpl author) throws AccessDeniedException{
+        User userAuthor = userService.getUserFromUserDetails(author);
+        User actualAuthor = post.getAuthor();
 
         if (!userAuthor.equals(actualAuthor) && !actualAuthor.getRoles().contains(Role.ADMIN)) {
-            throw new AccessDeniedException("Access denied. Only the author can modify or delete the article!");
+            throw new AccessDeniedException("Access denied. Only the author can modify or delete the post!");
         }
     }
 
-    private void validArticleFields(ArticleDto article) throws IllegalArgumentException {
-        String title = article.getTitle();
-        String content = article.getContent();
+    private void validPostFields(PostDto post) throws IllegalArgumentException {
+        String title = post.getTitle();
+        String content = post.getContent();
 
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("Title can not be empty!");

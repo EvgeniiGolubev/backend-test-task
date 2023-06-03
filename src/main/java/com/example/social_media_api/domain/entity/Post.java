@@ -4,8 +4,8 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "articles")
-public class Article {
+@Table(name = "posts")
+public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,10 +26,9 @@ public class Article {
     @Column(name="create_date", nullable = false)
     private LocalDateTime createDate;
 
-    public Article() {
-    }
+    public Post() {}
 
-    public Article(String title, String content, String imageLink, User author, LocalDateTime createDate) {
+    public Post(String title, String content, String imageLink, User author, LocalDateTime createDate) {
         this.title = title;
         this.content = content;
         this.imageLink = imageLink;
@@ -88,13 +87,12 @@ public class Article {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Article article)) return false;
+        if (!(o instanceof Post post)) return false;
 
-        if (getId() != null ? !getId().equals(article.getId()) : article.getId() != null) return false;
-        if (getTitle() != null ? !getTitle().equals(article.getTitle()) : article.getTitle() != null) return false;
-        if (getContent() != null ? !getContent().equals(article.getContent()) : article.getContent() != null)
-            return false;
-        return getImageLink() != null ? getImageLink().equals(article.getImageLink()) : article.getImageLink() == null;
+        if (getId() != null ? !getId().equals(post.getId()) : post.getId() != null) return false;
+        if (getTitle() != null ? !getTitle().equals(post.getTitle()) : post.getTitle() != null) return false;
+        if (getContent() != null ? !getContent().equals(post.getContent()) : post.getContent() != null) return false;
+        return getAuthor() != null ? getAuthor().equals(post.getAuthor()) : post.getAuthor() == null;
     }
 
     @Override
@@ -102,7 +100,7 @@ public class Article {
         int result = getId() != null ? getId().hashCode() : 0;
         result = 31 * result + (getTitle() != null ? getTitle().hashCode() : 0);
         result = 31 * result + (getContent() != null ? getContent().hashCode() : 0);
-        result = 31 * result + (getImageLink() != null ? getImageLink().hashCode() : 0);
+        result = 31 * result + (getAuthor() != null ? getAuthor().hashCode() : 0);
         return result;
     }
 }

@@ -26,7 +26,7 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public void sendMessage(UserDetailsImpl user, Long id, String content) {
-        User sender = userService.findUserByEmail(user.getUsername());
+        User sender = userService.getUserFromUserDetails(user);
         User receiver = userService.findUserById(id);
 
         checkAccess(sender, receiver);
@@ -42,12 +42,12 @@ public class MessageServiceImpl implements MessageService {
     public List<MessageDto> getMessageHistory(UserDetailsImpl user, Long id)
             throws UserNotFoundException, AccessDeniedException {
 
-        User sender = userService.findUserByEmail(user.getUsername());
+        User sender = userService.getUserFromUserDetails(user);
         User receiver = userService.findUserById(id);
 
         checkAccess(sender, receiver);
 
-        return messageRepository.findBySenderAndReceiverOrReceiverAndSenderOrderByTimestamp(sender, receiver, sender, receiver)
+        return messageRepository.findBySenderAndReceiverOrReceiverAndSenderOrderByCreateDate(sender, receiver, sender, receiver)
                 .stream().map(MessageDto::new).toList();
     }
 

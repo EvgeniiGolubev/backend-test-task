@@ -25,13 +25,13 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public UserDto getUserDto(UserDetailsImpl user) {
-        User userFromDb = userService.findUserByEmail(user.getUsername());
+        User userFromDb = userService.getUserFromUserDetails(user);
         return new UserDto(userFromDb);
     }
 
     @Override
     public List<UserDto> getUserSubscriptions(UserDetailsImpl user) {
-        User userFromDb = userService.findUserByEmail(user.getUsername());
+        User userFromDb = userService.getUserFromUserDetails(user);
 
         return userSubscriptionRepository.findBySubscriber(userFromDb).stream()
                 .map(sub -> new UserDto(sub.getChannel()))
@@ -40,7 +40,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public List<UserDto> getUserSubscribers(UserDetailsImpl user) {
-        User userFromDb = userService.findUserByEmail(user.getUsername());
+        User userFromDb = userService.getUserFromUserDetails(user);
 
         return userSubscriptionRepository.findByChannel(userFromDb).stream()
                 .map(sub -> new UserDto(sub.getSubscriber()))
@@ -49,7 +49,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public List<UserDto> getUserFriends(UserDetailsImpl user) {
-        User userFromDb = userService.findUserByEmail(user.getUsername());
+        User userFromDb = userService.getUserFromUserDetails(user);
         return userFromDb.getFriends().stream()
                 .map(UserDto::new)
                 .toList();
@@ -60,7 +60,7 @@ public class ProfileServiceImpl implements ProfileService {
             throws UserNotFoundException, AccessDeniedException {
 
         User channel = userService.findUserById(id);
-        User subscriber = userService.findUserByEmail(user.getUsername());
+        User subscriber = userService.getUserFromUserDetails(user);
 
         if (channel.equals(subscriber)) {
             throw new AccessDeniedException("You can not follow yourself");
@@ -101,7 +101,7 @@ public class ProfileServiceImpl implements ProfileService {
     public UserDto changeSubscriptionStatus(UserDetailsImpl user, Long id, Boolean status)
             throws UserNotFoundException, AccessDeniedException {
 
-        User channel = userService.findUserByEmail(user.getUsername());
+        User channel = userService.getUserFromUserDetails(user);
         User subscriber = userService.findUserById(id);
 
         if (channel.equals(subscriber)) {

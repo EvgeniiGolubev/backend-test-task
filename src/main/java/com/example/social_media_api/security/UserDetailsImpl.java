@@ -15,7 +15,6 @@ public class UserDetailsImpl implements UserDetails {
 
     public UserDetailsImpl() {
     }
-
     public UserDetailsImpl(User user) {
         this.email = user.getEmail();
         this.password = user.getPassword();

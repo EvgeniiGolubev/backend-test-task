@@ -1,6 +1,7 @@
 package com.example.social_media_api.domain.entity;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -41,13 +42,12 @@ public class User {
     private Set<User> friends = new HashSet<>();
 
     @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Message> sendMessages;
+    private List<Message> sendMessages = new ArrayList<>();
 
     @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Message> receivedMessages;
+    private List<Message> receivedMessages = new ArrayList<>();
 
-    public User() {
-    }
+    public User() {}
 
     public User(String email, String password, String name, Set<Role> roles) {
         this.email = email;

@@ -7,7 +7,7 @@
   <router-link to="/login" style="margin: 5px">Login</router-link>
   <router-link to="/register" style="margin: 5px">Register</router-link>
   <router-link to="/main" style="margin: 5px">Main</router-link>
-  <router-link to="/articles" style="margin: 5px">Articles</router-link>
+  <router-link to="/posts" style="margin: 5px">Posts</router-link>
   <router-link to="/profile" style="margin: 5px">Profile</router-link>
   <router-link to="/friends" style="margin: 5px">Friends</router-link>
   <router-link to="/activity" style="margin: 5px">Activity feed</router-link>

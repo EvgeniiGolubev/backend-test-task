@@ -1,9 +1,9 @@
 package com.example.social_media_api.controller;
 
-import com.example.social_media_api.domain.dto.ArticleDto;
+import com.example.social_media_api.domain.dto.PostDto;
 import com.example.social_media_api.response.ResponseMessage;
 import com.example.social_media_api.security.UserDetailsImpl;
-import com.example.social_media_api.service.ArticleService;
+import com.example.social_media_api.service.PostService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,10 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/activity-feed")
 public class ActivityFeedController {
-    private final ArticleService articleService;
+    private final PostService postService;
 
-    public ActivityFeedController(ArticleService articleService) {
-        this.articleService = articleService;
+    public ActivityFeedController(PostService postService) {
+        this.postService = postService;
     }
 
     @GetMapping
@@ -28,8 +28,8 @@ public class ActivityFeedController {
                                              @RequestParam("page") int page,
                                              @RequestParam("pageSize") int pageSize) {
         try {
-            Page<ArticleDto> articles = articleService.getArticlesBySubscriber(user, sortType, page, pageSize);
-            return new ResponseEntity<>(articles, HttpStatus.OK);
+            Page<PostDto> posts = postService.getPostsBySubscriber(user, sortType, page, pageSize);
+            return new ResponseEntity<>(posts, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
         }

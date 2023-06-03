@@ -22,17 +22,17 @@ public class Message {
     @Column(name="content", nullable = false)
     private String content;
 
-    @Column(name="timestamp", nullable = false)
-    private LocalDateTime timestamp;
+    @Column(name="create_date", nullable = false)
+    private LocalDateTime createDate;
 
     public Message() {
     }
 
-    public Message(User sender, User receiver, String content, LocalDateTime timestamp) {
+    public Message(User sender, User receiver, String content, LocalDateTime createDate) {
         this.sender = sender;
         this.receiver = receiver;
         this.content = content;
-        this.timestamp = timestamp;
+        this.createDate = createDate;
     }
 
     public Long getId() {
@@ -67,12 +67,12 @@ public class Message {
         this.content = content;
     }
 
-    public LocalDateTime getTimestamp() {
-        return timestamp;
+    public LocalDateTime getCreateDate() {
+        return createDate;
     }
 
-    public void setTimestamp(LocalDateTime messageTime) {
-        this.timestamp = messageTime;
+    public void setCreateDate(LocalDateTime messageTime) {
+        this.createDate = messageTime;
     }
 
     @Override

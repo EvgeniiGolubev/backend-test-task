@@ -4,6 +4,7 @@ import com.example.social_media_api.exception.JwtAuthenticationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,10 +36,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String token = resolveToken(request);
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
         try {
+            String token = resolveToken(request);
+
             if (token != null && jwtProvider.validateJwtToken(token)) {
                 String username = jwtProvider.getUserNameFromJwtToken(token);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -52,7 +55,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             SecurityContextHolder.clearContext();
             response.sendError(e.getHttpStatus().value());
 
-            throw new JwtAuthenticationException("Jwt token is expired or invalid");
+            throw new JwtAuthenticationException("Jwt token is expired or invalid", HttpStatus.FORBIDDEN);
         }
 
         filterChain.doFilter(request, response);

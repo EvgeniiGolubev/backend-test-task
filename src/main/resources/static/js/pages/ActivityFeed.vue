@@ -17,13 +17,13 @@
     </tr>
     </thead>
     <tbody>
-    <tr v-for="article in articles">
-      <td>{{ article.id }}</td>
-      <td>{{ article.title }}</td>
-      <td>{{ article.content }}</td>
-      <td><img :src="getImagePath(article.imageLink)" alt="Article Image"></td>
-      <td>{{ article.author.name }}</td>
-      <td>{{ article.create_date }}</td>
+    <tr v-for="post in articles">
+      <td>{{ post.id }}</td>
+      <td>{{ post.title }}</td>
+      <td>{{ post.content }}</td>
+      <td><img :src="getImagePath(post.imageLink)" alt="Article Image"></td>
+      <td>{{ post.author.name }}</td>
+      <td>{{ post.create_date }}</td>
     </tr>
     </tbody>
   </table>

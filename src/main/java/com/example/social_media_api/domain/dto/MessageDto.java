@@ -20,8 +20,8 @@ public class MessageDto implements Serializable {
     private UserDto receiver;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    @JsonProperty("timestamp")
-    private LocalDateTime timestamp;
+    @JsonProperty("create_date")
+    private LocalDateTime createDate;
 
     public MessageDto() {}
 
@@ -30,7 +30,7 @@ public class MessageDto implements Serializable {
         this.content = message.getContent();
         this.sender = new UserDto(message.getSender());
         this.receiver = new UserDto(message.getReceiver());
-        this.timestamp = message.getTimestamp();
+        this.createDate = message.getCreateDate();
     }
 
     public Long getId() {
@@ -65,11 +65,11 @@ public class MessageDto implements Serializable {
         this.receiver = receiver;
     }
 
-    public LocalDateTime getTimestamp() {
-        return timestamp;
+    public LocalDateTime getCreateDate() {
+        return createDate;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
+    public void setCreateDate(LocalDateTime createDate) {
+        this.createDate = createDate;
     }
 }

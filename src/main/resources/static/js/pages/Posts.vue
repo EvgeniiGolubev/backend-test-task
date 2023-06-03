@@ -31,21 +31,21 @@
     </tr>
     </thead>
     <tbody>
-    <tr v-for="article in articles">
-      <td>{{ article.id }}</td>
-      <td>{{ article.title }}</td>
-      <td>{{ article.content }}</td>
-      <td><img :src="getImagePath(article.imageLink)" alt="Article Image"></td>
-      <td>{{ article.author.name }}</td>
-      <td>{{ article.create_date }}</td>
+    <tr v-for="post in posts">
+      <td>{{ post.id }}</td>
+      <td>{{ post.title }}</td>
+      <td>{{ post.content }}</td>
+      <td><img :src="getImagePath(post.imageLink)" alt="Article Image"></td>
+      <td>{{ post.author.name }}</td>
+      <td>{{ post.create_date }}</td>
       <td>
-        <button type="button" @click="subscribe(article.author.id)">Subscribe</button>
+        <button type="button" @click="subscribe(post.author.id)">Subscribe</button>
       </td>
       <td>
-        <button type="button" @click="deleteArticle(article.id)">Delete</button>
+        <button type="button" @click="deletePost(post.id)">Delete</button>
       </td>
       <td>
-        <button type="button" @click="editArticle(article)">Edit</button>
+        <button type="button" @click="editPost(post)">Edit</button>
       </td>
     </tr>
     </tbody>
@@ -59,17 +59,17 @@ export default {
   data() {
     return {
       responseMessages: '',
-      articles: [],
+      posts: [],
       errors: [],
       id: '',
       title: '',
       content: '',
       image: null,
-      selectedArticle: null
+      selectedPost: null
     }
   },
   watch: {
-    selectedArticle(newArt, oldArt) {
+    selectedPost(newArt, oldArt) {
       this.id = newArt.id
       this.title = newArt.title
       this.content = newArt.content
@@ -81,10 +81,10 @@ export default {
     }
   },
   methods: {
-    getArticles() {
-      axios.get("/api/articles")
+    getPosts() {
+      axios.get("/api/posts")
           .then(response => {
-            this.articles = response.data
+            this.posts = response.data
           })
           .catch(error => {
             if (Array.isArray(error.response.data)) {
@@ -94,8 +94,8 @@ export default {
             }
           })
     },
-    deleteArticle(id) {
-      axios.delete(`/api/articles/${id}`)
+    deletePost(id) {
+      axios.delete(`/api/posts/${id}`)
           .then(response => {
             this.responseMessages = response.data.message
           })
@@ -107,8 +107,8 @@ export default {
             }
           })
     },
-    editArticle(article) {
-      this.selectedArticle = article
+    editPost(post) {
+      this.selectedPost = post
     },
     save: function () {
       const formData = new FormData();
@@ -117,10 +117,10 @@ export default {
       formData.append('image', this.image);
 
       if (this.id) {
-        axios.put(`/api/articles/${this.id}`, formData)
+        axios.put(`/api/posts/${this.id}`, formData)
             .then(response => {
-              let index = this.articles.findIndex(item => item.id === response.data.id)
-              this.articles.splice(index, 1, response.data);
+              let index = this.posts.findIndex(item => item.id === response.data.id)
+              this.posts.splice(index, 1, response.data);
             })
             .catch(error => {
               if (Array.isArray(error.response.data)) {
@@ -130,9 +130,9 @@ export default {
               }
             })
       } else {
-        axios.post(`/api/articles`, formData)
+        axios.post(`/api/posts`, formData)
             .then(response => {
-              this.articles.push(response.data)
+              this.posts.push(response.data)
             })
             .catch(error => {
               if (Array.isArray(error.response.data)) {
@@ -165,7 +165,7 @@ export default {
     }
   },
   mounted() {
-    this.getArticles()
+    this.getPosts()
   },
 }
 </script>

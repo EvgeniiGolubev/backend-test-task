@@ -1,11 +1,11 @@
 package com.example.social_media_api.controller;
 
-import com.example.social_media_api.domain.dto.ArticleDto;
+import com.example.social_media_api.domain.dto.PostDto;
 import com.example.social_media_api.exception.AccessDeniedException;
-import com.example.social_media_api.exception.ArticleNotFoundException;
+import com.example.social_media_api.exception.PostNotFoundException;
 import com.example.social_media_api.response.ResponseMessage;
 import com.example.social_media_api.security.UserDetailsImpl;
-import com.example.social_media_api.service.ArticleService;
+import com.example.social_media_api.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,37 +17,37 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/articles")
-public class ArticleController {
-    private final ArticleService articleService;
+@RequestMapping("/api/posts")
+public class PostController {
+    private final PostService postService;
 
     @Autowired
-    public ArticleController(ArticleService articleService) {
-        this.articleService = articleService;
+    public PostController(PostService postService) {
+        this.postService = postService;
     }
 
     @GetMapping
-    public List<ArticleDto> findAllArticles() {
-        return articleService.findAllArticles();
+    public List<PostDto> findAllPosts() {
+        return postService.findAllPosts();
     }
 
     @GetMapping("{id}")
-    public ResponseEntity<?> findArticleById(@PathVariable("id") Long id) {
+    public ResponseEntity<?> findPostById(@PathVariable("id") Long id) {
         try {
-            return new ResponseEntity<>(articleService.findArticlesById(id), HttpStatus.OK);
-        } catch (ArticleNotFoundException e) {
+            return new ResponseEntity<>(postService.findPostById(id), HttpStatus.OK);
+        } catch (PostNotFoundException e) {
             return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
         }
     }
 
     @PostMapping
-    public ResponseEntity<?> createArticle(@ModelAttribute ArticleDto articleDto,
+    public ResponseEntity<?> createPost(@ModelAttribute PostDto post,
                                            @RequestParam(name = "image", required = false) MultipartFile image,
                                            @AuthenticationPrincipal UserDetailsImpl author) {
         try {
-            ArticleDto createdArticle = articleService.createArticle(articleDto, image, author);
+            PostDto createdPost = postService.createPost(post, image, author);
 
-            return new ResponseEntity<>(createdArticle, HttpStatus.OK);
+            return new ResponseEntity<>(createdPost, HttpStatus.OK);
         } catch (IOException e) {
             return new ResponseEntity<>(new ResponseMessage("Failed to save file"), HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (IllegalArgumentException e) {
@@ -56,17 +56,17 @@ public class ArticleController {
     }
 
     @PutMapping("{id}")
-    public ResponseEntity<?> updateArticle(@PathVariable("id") Long id,
-                                           @ModelAttribute ArticleDto article,
+    public ResponseEntity<?> updatePost(@PathVariable("id") Long id,
+                                           @ModelAttribute PostDto post,
                                            @RequestParam(name = "image", required = false) MultipartFile image,
                                            @AuthenticationPrincipal UserDetailsImpl author) {
         try {
-            ArticleDto updatedArticle = articleService.updateArticle(id, article, image, author);
+            PostDto updatedPost = postService.updatePost(id, post, image, author);
 
-            return new ResponseEntity<>(updatedArticle, HttpStatus.OK);
+            return new ResponseEntity<>(updatedPost, HttpStatus.OK);
         } catch (AccessDeniedException e) {
             return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.FORBIDDEN);
-        } catch (ArticleNotFoundException | IllegalArgumentException e) {
+        } catch (PostNotFoundException | IllegalArgumentException e) {
             return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
         } catch (IOException e) {
             return new ResponseEntity<>(new ResponseMessage("Failed to save file"), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -74,14 +74,14 @@ public class ArticleController {
     }
 
     @DeleteMapping("{id}")
-    public ResponseEntity<?> deleteArticle(@PathVariable("id") Long id,
+    public ResponseEntity<?> deletePost(@PathVariable("id") Long id,
                                            @AuthenticationPrincipal UserDetailsImpl author) {
         try {
-            articleService.deleteArticle(id, author);
-            return ResponseEntity.ok("Delete success");
+            postService.deletePost(id, author);
+            return ResponseEntity.ok("Post delete success");
         } catch (AccessDeniedException e) {
             return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.FORBIDDEN);
-        } catch (ArticleNotFoundException e) {
+        } catch (PostNotFoundException e) {
             return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
         } catch (IOException e) {
             return new ResponseEntity<>(new ResponseMessage("Failed to remove file"), HttpStatus.INTERNAL_SERVER_ERROR);

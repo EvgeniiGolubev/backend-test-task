@@ -4,15 +4,18 @@ import com.example.social_media_api.domain.dto.NewUserDto;
 import com.example.social_media_api.domain.entity.User;
 import com.example.social_media_api.exception.UserAlreadyExistsException;
 import com.example.social_media_api.exception.UserNotFoundException;
+import com.example.social_media_api.security.UserDetailsImpl;
 
 public interface UserService {
     User saveUser(NewUserDto newUserDto);
 
-    User findUserByEmail(String email);
-
-    User findUserByName(String name);
+    User getUserFromUserDetails(UserDetailsImpl userDetails);
 
     User findUserById(Long id) throws UserNotFoundException;
 
     User updateUser(User user);
+
+    void checkEmailExists(String email) throws UserAlreadyExistsException;
+
+    void checkNameExists(String name) throws UserAlreadyExistsException;
 }

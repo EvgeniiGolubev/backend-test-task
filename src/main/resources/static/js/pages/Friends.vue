@@ -12,7 +12,7 @@
       <div v-for="message in messages">
         <div>From: {{ message.sender }}</div>
         <div>To: {{ message.receiver }}</div>
-        <div>Date: {{ message.timestamp }}</div>
+        <div>Date: {{ message.create_date }}</div>
         <div>Content: {{ message.content }}</div>
         <hr/>
       </div>

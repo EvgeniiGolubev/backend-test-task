@@ -1,7 +1,6 @@
 package com.example.social_media_api.config;
 
 import com.example.social_media_api.security.jwt.JwtTokenFilter;
-import com.example.social_media_api.security.jwt.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

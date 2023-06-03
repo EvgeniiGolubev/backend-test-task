@@ -23,10 +23,7 @@ public class JwtTokenProvider {
     public String generateJwtToken(String username) {
         Date now = new Date();
         Date expiration = new Date(new Date().getTime() + jwtExpiration * 1000L);
-        SecretKeySpec secretKeySpec = new SecretKeySpec(
-                jwtSecret.getBytes(StandardCharsets.UTF_8),
-                SignatureAlgorithm.HS256.getJcaName()
-        );
+        SecretKeySpec secretKeySpec = getSecretKeySpec();
 
         return Jwts.builder()
                 .setHeaderParam("alg", "HS256")
@@ -40,10 +37,7 @@ public class JwtTokenProvider {
 
     public Boolean validateJwtToken(String authToken) {
         try {
-            SecretKeySpec secretKeySpec = new SecretKeySpec(
-                    jwtSecret.getBytes(StandardCharsets.UTF_8),
-                    SignatureAlgorithm.HS256.getJcaName()
-            );
+            SecretKeySpec secretKeySpec = getSecretKeySpec();
 
             Jwts.parserBuilder().setSigningKey(secretKeySpec).build().parseClaimsJws(authToken);
             return true;
@@ -53,10 +47,7 @@ public class JwtTokenProvider {
     }
 
     public String getUserNameFromJwtToken(String token) {
-        SecretKeySpec secretKeySpec = new SecretKeySpec(
-                jwtSecret.getBytes(StandardCharsets.UTF_8),
-                SignatureAlgorithm.HS256.getJcaName()
-        );
+        SecretKeySpec secretKeySpec = getSecretKeySpec();
 
         return Jwts.parserBuilder()
                 .setSigningKey(secretKeySpec)
@@ -64,5 +55,9 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+    private SecretKeySpec getSecretKeySpec() {
+        return new SecretKeySpec(jwtSecret.getBytes(StandardCharsets.UTF_8), SignatureAlgorithm.HS256.getJcaName());
     }
 }

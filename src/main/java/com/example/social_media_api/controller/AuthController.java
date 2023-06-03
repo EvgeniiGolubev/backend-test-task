@@ -1,9 +1,8 @@
 package com.example.social_media_api.controller;
 
+import com.example.social_media_api.domain.dto.AuthUserDto;
 import com.example.social_media_api.domain.dto.LoginUserDto;
 import com.example.social_media_api.domain.dto.NewUserDto;
-import com.example.social_media_api.domain.entity.User;
-import com.example.social_media_api.exception.InvalidCredentialsException;
 import com.example.social_media_api.exception.UserAlreadyExistsException;
 import com.example.social_media_api.response.ResponseMessage;
 import com.example.social_media_api.security.jwt.JwtUtils;
@@ -11,6 +10,11 @@ import com.example.social_media_api.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,21 +35,17 @@ public class AuthController {
         this.jwtUtils = jwtUtils;
     }
 
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginUserDto loginUserDto,
-                                              HttpServletResponse response) {
+    public ResponseEntity<?> loginUser(@Valid @RequestBody LoginUserDto loginUserDto, HttpServletResponse response) {
         try {
-            User user = userService.findUserByEmail(loginUserDto.getEmail());
-
-            if (user == null) {
-                throw new InvalidCredentialsException("Invalid email or password");
-            }
-
-            response.addCookie(jwtUtils.makeCookie(user.getEmail()));
+            authenticateUser(loginUserDto, response);
 
             return new ResponseEntity<>(new ResponseMessage("User success logged!"), HttpStatus.OK);
-        } catch (InvalidCredentialsException e) {
-            return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
+        } catch (AuthenticationException e) {
+            return new ResponseEntity<>(new ResponseMessage("Invalid email or password"), HttpStatus.UNAUTHORIZED);
         }
     }
 
@@ -53,20 +53,18 @@ public class AuthController {
     public ResponseEntity<?> registerUser(@Valid @RequestBody NewUserDto newUserDto,
                                           HttpServletResponse response) {
         try {
-            if (userService.findUserByEmail(newUserDto.getEmail()) != null) {
-                throw new UserAlreadyExistsException("Email is already taken!");
-            }
+            userService.checkEmailExists(newUserDto.getEmail());
+            userService.checkNameExists(newUserDto.getName());
 
-            if (userService.findUserByName(newUserDto.getName()) != null) {
-                throw new UserAlreadyExistsException("Name is already taken!");
-            }
+            userService.saveUser(newUserDto);
 
-            User user = userService.saveUser(newUserDto);
-            response.addCookie(jwtUtils.makeCookie(user.getEmail()));
+            authenticateUser(newUserDto, response);
 
             return new ResponseEntity<>(new ResponseMessage("User registered successfully!"), HttpStatus.OK);
         } catch (UserAlreadyExistsException e) {
             return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
+        } catch (AuthenticationException e) {
+            return new ResponseEntity<>(new ResponseMessage("Invalid email or password"), HttpStatus.UNAUTHORIZED);
         }
     }
 
@@ -77,5 +75,13 @@ public class AuthController {
                 .collect(Collectors.toList());
 
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+    }
+
+    private void authenticateUser(AuthUserDto loginUserDto, HttpServletResponse response) throws AuthenticationException {
+        Authentication authentication = authenticationManager
+                .authenticate(new UsernamePasswordAuthenticationToken(loginUserDto.getEmail(), loginUserDto.getPassword()));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        response.addCookie(jwtUtils.makeCookie(loginUserDto.getEmail()));
     }
 }

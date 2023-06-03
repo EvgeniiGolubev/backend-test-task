@@ -43,7 +43,7 @@ public class MessageController {
                                          @PathVariable("receiverId") Long receiverId,
                                          @Valid @RequestBody MessageDto message) {
         try {
-             messageService.sendMessage(sender, receiverId, message.getContent());
+            messageService.sendMessage(sender, receiverId, message.getContent());
             return ResponseEntity.ok("Message sent successfully!");
         } catch (UserNotFoundException | AccessDeniedException e) {
             return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);

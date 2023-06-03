@@ -1,12 +1,12 @@
 package com.example.social_media_api.domain.dto;
 
-import com.example.social_media_api.domain.entity.Article;
+import com.example.social_media_api.domain.entity.Post;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 
-public class ArticleDto {
+public class PostDto {
     @JsonProperty("id")
     private Long id;
     @JsonProperty("title")
@@ -21,16 +21,16 @@ public class ArticleDto {
     @JsonProperty("create_date")
     private LocalDateTime createDate;
 
-    public ArticleDto() {
+    public PostDto() {
     }
 
-    public ArticleDto(Article article) {
-        this.id = article.getId();
-        this.title = article.getTitle();
-        this.content = article.getContent();
-        this.imageLink = article.getImageLink();
-        this.author = new UserDto(article.getAuthor());
-        this.createDate = article.getCreateDate();
+    public PostDto(Post post) {
+        this.id = post.getId();
+        this.title = post.getTitle();
+        this.content = post.getContent();
+        this.imageLink = post.getImageLink();
+        this.author = new UserDto(post.getAuthor());
+        this.createDate = post.getCreateDate();
     }
 
     public Long getId() {
