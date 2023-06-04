@@ -2,12 +2,18 @@ package com.example.social_media_api.domain.dto;
 
 import com.example.social_media_api.domain.entity.User;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
 
+@Schema(description = "DTO for representing a user")
 public class UserDto implements Serializable {
+
+    @Schema(description = "User ID")
     @JsonProperty("id")
     private Long id;
+
+    @Schema(description = "User name")
     @JsonProperty("name")
     private String name;
 

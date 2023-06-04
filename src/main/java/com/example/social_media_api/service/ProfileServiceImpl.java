@@ -56,7 +56,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public UserDto changeSubscription(Long id, UserDetailsImpl user, Boolean isSubscribe)
+    public void changeSubscription(Long id, UserDetailsImpl user, Boolean isSubscribe)
             throws UserNotFoundException, AccessDeniedException {
 
         User channel = userService.findUserById(id);
@@ -93,12 +93,10 @@ public class ProfileServiceImpl implements ProfileService {
 
         userService.updateUser(channel);
         userService.updateUser(subscriber);
-
-        return new UserDto(subscriber);
     }
 
     @Override
-    public UserDto changeSubscriptionStatus(UserDetailsImpl user, Long id, Boolean status)
+    public void changeSubscriptionStatus(UserDetailsImpl user, Long id, Boolean status)
             throws UserNotFoundException, AccessDeniedException {
 
         User channel = userService.getUserFromUserDetails(user);
@@ -134,8 +132,6 @@ public class ProfileServiceImpl implements ProfileService {
 
         userService.updateUser(channel);
         userService.updateUser(subscriber);
-
-        return new UserDto(subscriber);
     }
 
     private void unfollowAndStopBeingFriends(User channel, User subscriber) {

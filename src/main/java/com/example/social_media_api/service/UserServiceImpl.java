@@ -47,7 +47,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id).orElse(null);
 
         if (user == null) {
-            throw new UserNotFoundException("User not found!");
+            throw new UserNotFoundException("User not found");
         }
 
         return user;
@@ -61,14 +61,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public void checkEmailExists(String email) throws UserAlreadyExistsException {
         if (userRepository.findByEmail(email) != null) {
-            throw new UserAlreadyExistsException("Email is already taken!");
+            throw new UserAlreadyExistsException("Email is already taken");
         }
     }
 
     @Override
     public void checkNameExists(String name) throws UserAlreadyExistsException {
         if (userRepository.findByName(name) != null) {
-            throw new UserAlreadyExistsException("Name is already taken!");
+            throw new UserAlreadyExistsException("Name is already taken");
         }
     }
 }

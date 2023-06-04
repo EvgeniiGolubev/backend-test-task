@@ -12,8 +12,8 @@ public interface ProfileService {
     List<UserDto> getUserSubscriptions(UserDetailsImpl user);
     List<UserDto> getUserSubscribers(UserDetailsImpl user);
     List<UserDto> getUserFriends(UserDetailsImpl user);
-    UserDto changeSubscriptionStatus(UserDetailsImpl user, Long id, Boolean status)
+    void changeSubscriptionStatus(UserDetailsImpl user, Long id, Boolean status)
             throws UserNotFoundException, AccessDeniedException;
-    UserDto changeSubscription(Long id, UserDetailsImpl user, Boolean isSubscribe)
+    void changeSubscription(Long id, UserDetailsImpl user, Boolean isSubscribe)
             throws UserNotFoundException, AccessDeniedException;
 }

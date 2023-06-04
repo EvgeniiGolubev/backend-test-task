@@ -53,7 +53,7 @@ public class MessageServiceImpl implements MessageService {
 
     private void checkAccess(User sender, User receiver) throws AccessDeniedException {
         if (!sender.getFriends().contains(receiver)) {
-            throw new AccessDeniedException("You can only exchange messages with friends!");
+            throw new AccessDeniedException("You can only exchange messages with friends");
         }
     }
 }

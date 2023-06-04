@@ -131,7 +131,7 @@ public class PostServiceImpl implements PostService {
             String extension = originFileName.substring(originFileName.lastIndexOf(".")).toLowerCase();
 
             if (!extension.matches("\\.(jpg|jpeg|png)")) {
-                throw new IllegalArgumentException("Invalid image format. Only JPG, JPEG, and PNG formats are allowed.");
+                throw new IllegalArgumentException("Invalid image format. Only JPG, JPEG, and PNG formats are allowed");
             }
 
             String resultFileName = uuidFile + "." + extension;
@@ -157,7 +157,7 @@ public class PostServiceImpl implements PostService {
         Post postFromDb = postRepository.findById(id).orElse(null);
 
         if (postFromDb == null) {
-            throw new PostNotFoundException("Post not found!");
+            throw new PostNotFoundException("Post not found");
         }
 
         return postFromDb;
@@ -168,7 +168,7 @@ public class PostServiceImpl implements PostService {
         User actualAuthor = post.getAuthor();
 
         if (!userAuthor.equals(actualAuthor) && !actualAuthor.getRoles().contains(Role.ADMIN)) {
-            throw new AccessDeniedException("Access denied. Only the author can modify or delete the post!");
+            throw new AccessDeniedException("Access denied. Only the author can modify or delete the post");
         }
     }
 
@@ -177,11 +177,11 @@ public class PostServiceImpl implements PostService {
         String content = post.getContent();
 
         if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("Title can not be empty!");
+            throw new IllegalArgumentException("Title can not be empty");
         }
 
         if (content == null || content.isBlank()) {
-            throw new IllegalArgumentException("Content can not be empty!");
+            throw new IllegalArgumentException("Content can not be empty");
         }
     }
 
