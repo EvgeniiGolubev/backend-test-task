@@ -94,4 +94,17 @@ public class PostDto {
     public void setCreateDate(LocalDateTime createDate) {
         this.createDate = createDate;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PostDto postDto)) return false;
+
+        return getId() != null ? getId().equals(postDto.getId()) : postDto.getId() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return getId() != null ? getId().hashCode() : 0;
+    }
 }

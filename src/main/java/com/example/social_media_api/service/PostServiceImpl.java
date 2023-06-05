@@ -47,12 +47,13 @@ public class PostServiceImpl implements PostService {
     @Override
     public Page<PostDto> getPostsBySubscriber(UserDetailsImpl user, String sortType, int page, int pageSize)
             throws IllegalArgumentException {
-        User userFromDb = userService.getUserFromUserDetails(user);
-
         Sort sort = validPaginationAndGetSort(sortType, page, pageSize);
         Pageable pageable = PageRequest.of(page, pageSize, sort);
 
+        User userFromDb = userService.getUserFromUserDetails(user);
+
         Page<Post> resultPage = postRepository.findPostsBySubscribedUsersSortedByDate(userFromDb.getId(), pageable);
+
         return resultPage.map(PostDto::new);
     }
 
@@ -69,9 +70,9 @@ public class PostServiceImpl implements PostService {
 
         validPostFields(post);
 
-        User userAuthor = userService.getUserFromUserDetails(author);
-
         String imageLink = saveFileAndGetLink(image);
+
+        User userAuthor = userService.getUserFromUserDetails(author);
 
         Post newPost = new Post(
                 post.getTitle(),
@@ -122,7 +123,7 @@ public class PostServiceImpl implements PostService {
     }
 
     private String saveFileAndGetLink(MultipartFile image) throws IOException, IllegalArgumentException {
-        if (image != null && !image.getOriginalFilename().isEmpty()) {
+        if (image != null && !image.getOriginalFilename().isEmpty() && uploadPath != null) {
             Path path = Paths.get(uploadPath);
             Files.createDirectories(path);
 

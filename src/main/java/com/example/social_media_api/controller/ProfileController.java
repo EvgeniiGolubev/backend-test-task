@@ -1,6 +1,5 @@
 package com.example.social_media_api.controller;
 
-import com.example.social_media_api.domain.dto.PostDto;
 import com.example.social_media_api.domain.dto.UserDto;
 import com.example.social_media_api.exception.AccessDeniedException;
 import com.example.social_media_api.exception.UserNotFoundException;
@@ -23,6 +22,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @Tag(name = "Profile", description = "API for managing user profile (manage subscriptions and subscribers user's)")
 @RestController
@@ -88,7 +88,7 @@ public class ProfileController {
             )
     })
     @GetMapping("/friends")
-    public List<UserDto> getUserFriends(
+    public Set<UserDto> getUserFriends(
             @Parameter(hidden = true)
             @AuthenticationPrincipal UserDetailsImpl user
     ) {

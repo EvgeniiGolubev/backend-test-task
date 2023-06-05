@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class ProfileServiceImpl implements ProfileService {
@@ -48,11 +50,9 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public List<UserDto> getUserFriends(UserDetailsImpl user) {
+    public Set<UserDto> getUserFriends(UserDetailsImpl user) {
         User userFromDb = userService.getUserFromUserDetails(user);
-        return userFromDb.getFriends().stream()
-                .map(UserDto::new)
-                .toList();
+        return userFromDb.getFriends().stream().map(UserDto::new).collect(Collectors.toSet());
     }
 
     @Override
