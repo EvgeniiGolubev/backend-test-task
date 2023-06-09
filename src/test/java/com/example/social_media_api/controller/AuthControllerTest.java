@@ -2,6 +2,7 @@ package com.example.social_media_api.controller;
 
 import com.example.social_media_api.domain.dto.LoginUserDto;
 import com.example.social_media_api.domain.dto.NewUserDto;
+import com.example.social_media_api.domain.dto.UserDto;
 import com.example.social_media_api.exception.UserAlreadyExistsException;
 import com.example.social_media_api.exception.UserAuthenticationException;
 import com.example.social_media_api.response.ResponseMessage;
@@ -23,10 +24,16 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -47,6 +54,8 @@ class AuthControllerTest {
     @Mock
     private HttpServletResponse response;
 
+    private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -54,69 +63,112 @@ class AuthControllerTest {
 
     @Test
     public void testLoginUserSuccessful() throws UserAuthenticationException {
-        LoginUserDto loginUserDto = new LoginUserDto();
-        loginUserDto.setEmail("test@example.com");
-        loginUserDto.setPassword("password");
+        LoginUserDto user = new LoginUserDto();
+        user.setEmail("test@example.com");
+        user.setPassword("password");
 
-        Authentication authentication = new TestingAuthenticationToken(loginUserDto.getEmail(), loginUserDto.getPassword());
-        when(authenticationManager.authenticate(any())).thenReturn(authentication);
+        UserDto userDto = new UserDto();
 
-        ResponseEntity<?> responseEntity = authController.loginUser(loginUserDto, response);
+        Set<ConstraintViolation<LoginUserDto>> violations = validator.validate(user);
 
+        when(userService.findUserByEmail(user.getEmail())).thenReturn(userDto);
+
+        ResponseEntity<?> responseEntity = authController.loginUser(user, response);
+
+        assertThat(violations).isEmpty();
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("User successfully logged in", ((ResponseMessage) responseEntity.getBody()).getMessage());
+        assertEquals(userDto, responseEntity.getBody());
     }
 
     @Test
     public void testLoginUserInvalidCredentials() {
-        LoginUserDto loginUserDto = new LoginUserDto();
-        loginUserDto.setEmail("test@example.com");
-        loginUserDto.setPassword("password");
+        LoginUserDto user = new LoginUserDto();
+        user.setEmail("test@example.com");
+        user.setPassword("password");
 
-        when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Invalid credentials"));
+        when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException(""));
 
-        ResponseEntity<?> responseEntity = authController.loginUser(loginUserDto, response);
+        UserAuthenticationException exception = assertThrows(
+                UserAuthenticationException.class,
+                () -> authController.loginUser(user, response)
+        );
 
-        assertEquals(HttpStatus.UNAUTHORIZED, responseEntity.getStatusCode());
-        assertEquals("Invalid email or password", ((ResponseMessage) responseEntity.getBody()).getMessage());
+        assertEquals("Invalid email or password", exception.getMessage());
     }
 
     @Test
     public void testRegisterUserSuccessful() throws UserAlreadyExistsException, UserAuthenticationException {
-        NewUserDto newUserDto = new NewUserDto();
-        newUserDto.setEmail("test@example.com");
-        newUserDto.setPassword("password");
-        newUserDto.setConfirmPassword("password");
-        newUserDto.setName("John Doe");
+        NewUserDto user = new NewUserDto();
+        user.setEmail("test@example.com");
+        user.setPassword("password");
+        user.setConfirmPassword("password");
+        user.setName("John Doe");
 
-        ResponseEntity<?> responseEntity = authController.registerUser(newUserDto, response);
+        UserDto userDto = new UserDto();
 
+        Set<ConstraintViolation<NewUserDto>> violations = validator.validate(user);
+
+        when(userService.findUserByEmail(user.getEmail())).thenReturn(userDto);
+
+        ResponseEntity<?> responseEntity = authController.registerUser(user, response);
+
+        assertThat(violations).isEmpty();
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("User registered successfully", ((ResponseMessage) responseEntity.getBody()).getMessage());
-        verify(userService, times(1)).saveUser(newUserDto);
+        assertEquals(userDto, responseEntity.getBody());
     }
 
     @Test
-    public void testHandleValidationException() {
-        BindingResult bindingResult = mock(BindingResult.class);
+    void loginUserWithValidFieldsInLoginUserDto() {
+        LoginUserDto user = new LoginUserDto();
+        user.setEmail("test@mail.ru");
+        user.setPassword("password");
 
-        List<FieldError> fieldErrors = new ArrayList<>();
-        FieldError fieldError1 = new FieldError("newUserDto", "name", "Name cannot be empty");
-        FieldError fieldError2 = new FieldError("newUserDto", "confirmPassword", "Repeat password cannot be empty");
-        fieldErrors.add(fieldError1);
-        fieldErrors.add(fieldError2);
+        UserDto userDto = new UserDto();
 
-        when(bindingResult.getFieldErrors()).thenReturn(fieldErrors);
+        Set<ConstraintViolation<LoginUserDto>> violations = validator.validate(user);
 
-        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
+        when(userService.findUserByEmail(user.getEmail())).thenReturn(userDto);
 
-        ResponseEntity<List<ResponseMessage>> responseEntity = authController.handleValidationException(ex);
+        ResponseEntity<?> responseEntity = authController.loginUser(user, response);
 
-        List<ResponseMessage> responseMessages = responseEntity.getBody();
+        assertThat(violations).isEmpty();
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals(userDto, responseEntity.getBody());
+    }
 
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
-        assertEquals(2, responseMessages.size());
-        assertEquals("name: Name cannot be empty", responseMessages.get(0).getMessage());
-        assertEquals("confirmPassword: Repeat password cannot be empty", responseMessages.get(1).getMessage());
+    @Test
+    void registerUserWithValidFieldsInNewUserDto() {
+        NewUserDto user = new NewUserDto();
+        user.setEmail("test@mail.ru");
+        user.setPassword("password");
+        user.setConfirmPassword("password");
+        user.setName("John Doe");
+
+        UserDto userDto = new UserDto();
+
+        Set<ConstraintViolation<NewUserDto>> violations = validator.validate(user);
+
+        when(userService.findUserByEmail(user.getEmail())).thenReturn(userDto);
+
+        ResponseEntity<?> responseEntity = authController.registerUser(user, response);
+
+        assertThat(violations).isEmpty();
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals(userDto, responseEntity.getBody());
+    }
+
+    @Test
+    void validateWrongFieldsInNewUserDto() {
+        NewUserDto user = new NewUserDto();
+        user.setEmail("invalidemail");
+        user.setPassword("password");
+        user.setConfirmPassword("anotherPassword");
+        user.setName(" ");
+
+        Set<ConstraintViolation<NewUserDto>> violations = validator.validate(user);
+
+        assertThat(violations).hasSize(3);
+        assertThat(violations).extracting(ConstraintViolation::getMessage)
+                .contains("Email is not correct", "Name cannot be empty", "Passwords do not match");
     }
 }

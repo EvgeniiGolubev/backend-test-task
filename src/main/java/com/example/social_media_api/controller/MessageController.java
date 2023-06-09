@@ -61,12 +61,8 @@ public class MessageController {
             @Parameter(description = "receiver ID")
             @PathVariable("receiverId") Long receiverId
     ) {
-        try {
-            List<MessageDto> messages = messageService.getMessageHistory(sender, receiverId);
-            return new ResponseEntity<>(messages, HttpStatus.OK);
-        } catch (UserNotFoundException | AccessDeniedException e) {
-            return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
-        }
+        List<MessageDto> messages = messageService.getMessageHistory(sender, receiverId);
+        return new ResponseEntity<>(messages, HttpStatus.OK);
     }
 
     @Operation(summary = "Send message",
@@ -93,12 +89,8 @@ public class MessageController {
             @Parameter(schema = @Schema(implementation = MessageDto.class))
             @Valid @RequestBody MessageDto message
     ) {
-        try {
-            messageService.sendMessage(sender, receiverId, message.getContent());
-            return new ResponseEntity<>(new ResponseMessage("Message sent successfully"), HttpStatus.OK);
-        } catch (UserNotFoundException | AccessDeniedException e) {
-            return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
-        }
+        messageService.sendMessage(sender, receiverId, message.getContent());
+        return new ResponseEntity<>(new ResponseMessage("Message sent successfully"), HttpStatus.OK);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

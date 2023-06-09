@@ -2,7 +2,6 @@ package com.example.social_media_api.controller;
 
 import com.example.social_media_api.domain.dto.UserDto;
 import com.example.social_media_api.exception.AccessDeniedException;
-import com.example.social_media_api.exception.UserNotFoundException;
 import com.example.social_media_api.response.ResponseMessage;
 import com.example.social_media_api.security.UserDetailsImpl;
 import com.example.social_media_api.service.ProfileService;
@@ -122,13 +121,8 @@ public class ProfileController {
             @Parameter(description = "Subscribe or unsubscribe from a channel (true if subscribe, false if unsubscribe)")
             @RequestParam("subscribe") Boolean isSubscribe
     ) {
-        try {
-            profileService.changeSubscription(channelId, subscriber, isSubscribe);
-
-            return new ResponseEntity<>("Channel subscription status changed successfully", HttpStatus.OK);
-        } catch (UserNotFoundException | AccessDeniedException e) {
-            return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
-        }
+        profileService.changeSubscription(channelId, subscriber, isSubscribe);
+        return new ResponseEntity<>("Channel subscription status changed successfully", HttpStatus.OK);
     }
 
     @Operation(
@@ -156,12 +150,9 @@ public class ProfileController {
             @PathVariable("subscriberId") Long subscriberId,
 
             @Parameter(description = "Accept or reject a subscriber (true if accept, false if reject)")
-            @RequestParam("status") Boolean status) {
-        try {
-            profileService.changeSubscriptionStatus(chanel, subscriberId, status);
-            return new ResponseEntity<>("Status subscription changed successfully", HttpStatus.OK);
-        } catch (UserNotFoundException | AccessDeniedException e) {
-            return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
-        }
+            @RequestParam("status") Boolean status
+    ) {
+        profileService.changeSubscriptionStatus(chanel, subscriberId, status);
+        return new ResponseEntity<>("Status subscription changed successfully", HttpStatus.OK);
     }
 }

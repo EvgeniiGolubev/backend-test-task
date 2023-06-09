@@ -1,8 +1,6 @@
 package com.example.social_media_api.controller;
 
 import com.example.social_media_api.domain.dto.PostDto;
-import com.example.social_media_api.exception.AccessDeniedException;
-import com.example.social_media_api.exception.PostNotFoundException;
 import com.example.social_media_api.response.ResponseMessage;
 import com.example.social_media_api.security.UserDetailsImpl;
 import com.example.social_media_api.service.PostService;
@@ -23,7 +21,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 
 @Tag(name = "Posts", description = "API for managing posts")
@@ -67,11 +64,7 @@ public class PostController {
             @Parameter(description = "post ID")
             @PathVariable("id") Long id
     ) {
-        try {
-            return new ResponseEntity<>(postService.findPostById(id), HttpStatus.OK);
-        } catch (PostNotFoundException e) {
-            return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
-        }
+        return new ResponseEntity<>(postService.findPostById(id), HttpStatus.OK);
     }
 
     @Operation(summary = "Create a new post", description = "Create a new post with the provided details")
@@ -105,15 +98,8 @@ public class PostController {
             @Parameter(hidden = true)
             @AuthenticationPrincipal UserDetailsImpl author
     ) {
-        try {
-            PostDto createdPost = postService.createPost(post, image, author);
-
-            return new ResponseEntity<>(createdPost, HttpStatus.OK);
-        } catch (IOException e) {
-            return new ResponseEntity<>(new ResponseMessage("Failed to save image"), HttpStatus.INTERNAL_SERVER_ERROR);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
-        }
+        PostDto createdPost = postService.createPost(post, image, author);
+        return new ResponseEntity<>(createdPost, HttpStatus.OK);
     }
 
     @Operation(summary = "Update a post", description = "Update an existing post with the provided details")
@@ -155,17 +141,8 @@ public class PostController {
             @Parameter(hidden = true)
             @AuthenticationPrincipal UserDetailsImpl author
     ) {
-        try {
-            PostDto updatedPost = postService.updatePost(id, post, image, author);
-
-            return new ResponseEntity<>(updatedPost, HttpStatus.OK);
-        } catch (AccessDeniedException e) {
-            return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.FORBIDDEN);
-        } catch (PostNotFoundException | IllegalArgumentException e) {
-            return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
-        } catch (IOException e) {
-            return new ResponseEntity<>(new ResponseMessage("Failed to save image"), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        PostDto updatedPost = postService.updatePost(id, post, image, author);
+        return new ResponseEntity<>(updatedPost, HttpStatus.OK);
     }
 
     @Operation(summary = "Delete a post", description = "Delete a post by its ID")
@@ -199,15 +176,7 @@ public class PostController {
             @Parameter(hidden = true)
             @AuthenticationPrincipal UserDetailsImpl author
     ) {
-        try {
-            postService.deletePost(id, author);
-            return ResponseEntity.ok("Post delete successfully");
-        } catch (AccessDeniedException e) {
-            return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.FORBIDDEN);
-        } catch (PostNotFoundException e) {
-            return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
-        } catch (IOException e) {
-            return new ResponseEntity<>(new ResponseMessage("Failed to remove image"), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        postService.deletePost(id, author);
+        return ResponseEntity.ok("Post delete successfully");
     }
 }

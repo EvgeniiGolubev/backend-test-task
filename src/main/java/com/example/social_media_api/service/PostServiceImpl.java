@@ -5,6 +5,7 @@ import com.example.social_media_api.domain.entity.Post;
 import com.example.social_media_api.domain.entity.Role;
 import com.example.social_media_api.domain.entity.User;
 import com.example.social_media_api.exception.AccessDeniedException;
+import com.example.social_media_api.exception.FileManagerException;
 import com.example.social_media_api.exception.PostNotFoundException;
 import com.example.social_media_api.repository.PostRepository;
 import com.example.social_media_api.security.UserDetailsImpl;
@@ -66,7 +67,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PostDto createPost(PostDto post, MultipartFile image, UserDetailsImpl author)
-            throws IOException, IllegalArgumentException {
+            throws FileManagerException, IllegalArgumentException {
 
         validPostFields(post);
 
@@ -87,7 +88,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PostDto updatePost(Long id, PostDto post, MultipartFile image, UserDetailsImpl author)
-            throws AccessDeniedException, PostNotFoundException, IOException, IllegalArgumentException {
+            throws AccessDeniedException, PostNotFoundException, FileManagerException, IllegalArgumentException {
 
         validPostFields(post);
 
@@ -111,7 +112,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public void deletePost(Long id, UserDetailsImpl author)
-            throws AccessDeniedException, PostNotFoundException, IOException {
+            throws AccessDeniedException, PostNotFoundException, FileManagerException {
 
         Post postFromDb = checkPostPresentAndGet(id);
 
@@ -122,8 +123,12 @@ public class PostServiceImpl implements PostService {
         postRepository.delete(postFromDb);
     }
 
-    private String saveFileAndGetLink(MultipartFile image) throws IOException, IllegalArgumentException {
-        if (image != null && !image.getOriginalFilename().isEmpty() && uploadPath != null) {
+    private String saveFileAndGetLink(MultipartFile image) throws FileManagerException, IllegalArgumentException {
+        if (image == null || image.getOriginalFilename().isEmpty() || uploadPath == null) {
+            return null;
+        }
+
+        try {
             Path path = Paths.get(uploadPath);
             Files.createDirectories(path);
 
@@ -135,22 +140,27 @@ public class PostServiceImpl implements PostService {
                 throw new IllegalArgumentException("Invalid image format. Only JPG, JPEG, and PNG formats are allowed");
             }
 
-            String resultFileName = uuidFile + "." + extension;
+            String resultFileName = uuidFile + extension;
             Path filePath = Paths.get(uploadPath, resultFileName);
             image.transferTo(Files.createFile(filePath));
 
             return resultFileName;
+        } catch (IOException e) {
+            throw new FileManagerException("An error occurred while saving files");
         }
-
-        return null;
     }
 
-    private void deleteFile(String filename) throws IOException {
-        if (filename != null) {
-            Path filePath = Paths.get(uploadPath, filename);
-            if (Files.exists(filePath)) {
-                Files.delete(filePath);
+    private void deleteFile(String filename) throws FileManagerException {
+
+        try {
+            if (filename != null) {
+                Path filePath = Paths.get(uploadPath, filename);
+                if (Files.exists(filePath)) {
+                    Files.delete(filePath);
+                }
             }
+        } catch (IOException e) {
+            throw new FileManagerException("An error occurred while deleting files");
         }
     }
 

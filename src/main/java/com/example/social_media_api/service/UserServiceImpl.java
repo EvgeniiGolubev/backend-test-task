@@ -1,6 +1,7 @@
 package com.example.social_media_api.service;
 
 import com.example.social_media_api.domain.dto.NewUserDto;
+import com.example.social_media_api.domain.dto.UserDto;
 import com.example.social_media_api.domain.entity.Role;
 import com.example.social_media_api.domain.entity.User;
 import com.example.social_media_api.exception.UserAlreadyExistsException;
@@ -70,5 +71,16 @@ public class UserServiceImpl implements UserService {
         if (userRepository.findByName(name) != null) {
             throw new UserAlreadyExistsException("Name is already taken");
         }
+    }
+
+    @Override
+    public UserDto findUserByEmail(String email) {
+        User user = userRepository.findByEmail(email);
+
+        if (user == null) {
+            throw new UserNotFoundException("User not found");
+        }
+
+        return new UserDto(user);
     }
 }

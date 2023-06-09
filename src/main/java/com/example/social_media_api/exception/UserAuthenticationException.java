@@ -4,14 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
 
 public class UserAuthenticationException extends AuthenticationException {
-    private HttpStatus httpStatus;
-
-    public UserAuthenticationException(String msg, HttpStatus httpStatus) {
+    public UserAuthenticationException(String msg) {
         super(msg);
-        this.httpStatus = httpStatus;
-    }
-
-    public HttpStatus getHttpStatus() {
-        return httpStatus;
     }
 }

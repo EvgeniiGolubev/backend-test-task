@@ -58,11 +58,7 @@ public class ActivityFeedController {
             @Parameter(description = "Current page count. The minimum value is 1.")
             @RequestParam("pageSize") int pageSize
     ) {
-        try {
-            Page<PostDto> posts = postService.getPostsBySubscriber(user, sortType, page, pageSize);
-            return new ResponseEntity<>(posts, HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(new ResponseMessage(e.getMessage()), HttpStatus.BAD_REQUEST);
-        }
+        Page<PostDto> posts = postService.getPostsBySubscriber(user, sortType, page, pageSize);
+        return new ResponseEntity<>(posts, HttpStatus.OK);
     }
 }
