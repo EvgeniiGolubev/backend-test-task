@@ -2,11 +2,13 @@ package com.example.social_media_api.controller;
 
 import com.example.social_media_api.domain.dto.MessageDto;
 import com.example.social_media_api.domain.dto.PostDto;
+import com.example.social_media_api.domain.entity.User;
 import com.example.social_media_api.exception.AccessDeniedException;
 import com.example.social_media_api.exception.UserNotFoundException;
 import com.example.social_media_api.response.ResponseMessage;
 import com.example.social_media_api.security.UserDetailsImpl;
 import com.example.social_media_api.service.MessageService;
+import com.example.social_media_api.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -32,10 +34,12 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/messages")
 public class MessageController {
     private final MessageService messageService;
+    private final UserService userService;
 
     @Autowired
-    public MessageController(MessageService messageService) {
+    public MessageController(MessageService messageService, UserService userService) {
         this.messageService = messageService;
+        this.userService = userService;
     }
 
     @Operation(
@@ -56,12 +60,17 @@ public class MessageController {
     @GetMapping("/history/{receiverId}")
     public ResponseEntity<?> getMessageHistory(
             @Parameter(hidden = true)
-            @AuthenticationPrincipal UserDetailsImpl sender,
+            @AuthenticationPrincipal UserDetailsImpl authenticatedUser,
 
             @Parameter(description = "receiver ID")
             @PathVariable("receiverId") Long receiverId
     ) {
-        List<MessageDto> messages = messageService.getMessageHistory(sender, receiverId);
+        User sender = userService.getUserFromUserDetails(authenticatedUser);
+        User receiver = userService.findUserById(receiverId);
+
+        checkAccess(sender, receiver);
+
+        List<MessageDto> messages = messageService.getMessageHistory(sender, receiver);
         return new ResponseEntity<>(messages, HttpStatus.OK);
     }
 
@@ -81,7 +90,7 @@ public class MessageController {
     @PostMapping("/send/{receiverId}")
     public ResponseEntity<?> sendMessage(
             @Parameter(hidden = true)
-            @AuthenticationPrincipal UserDetailsImpl sender,
+            @AuthenticationPrincipal UserDetailsImpl authenticatedUser,
 
             @Parameter(description = "receiver ID")
             @PathVariable("receiverId") Long receiverId,
@@ -89,16 +98,18 @@ public class MessageController {
             @Parameter(schema = @Schema(implementation = MessageDto.class))
             @Valid @RequestBody MessageDto message
     ) {
-        messageService.sendMessage(sender, receiverId, message.getContent());
+        User sender = userService.getUserFromUserDetails(authenticatedUser);
+        User receiver = userService.findUserById(receiverId);
+
+        checkAccess(sender, receiver);
+
+        messageService.sendMessage(sender, receiver, message.getContent());
         return new ResponseEntity<>(new ResponseMessage("Message sent successfully"), HttpStatus.OK);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<List<ResponseMessage>> handleValidationException(MethodArgumentNotValidException ex) {
-        List<ResponseMessage> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> new ResponseMessage(error.getField() + ": " + error.getDefaultMessage()))
-                .collect(Collectors.toList());
-
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+    private void checkAccess(User sender, User receiver) throws AccessDeniedException {
+        if (!sender.getFriends().contains(receiver)) {
+            throw new AccessDeniedException("You can only exchange messages with friends");
+        }
     }
 }

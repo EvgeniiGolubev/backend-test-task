@@ -5,7 +5,6 @@ import com.example.social_media_api.domain.dto.NewUserDto;
 import com.example.social_media_api.domain.dto.UserDto;
 import com.example.social_media_api.exception.UserAlreadyExistsException;
 import com.example.social_media_api.exception.UserAuthenticationException;
-import com.example.social_media_api.response.ResponseMessage;
 import com.example.social_media_api.security.jwt.JwtUtils;
 import com.example.social_media_api.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,25 +16,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.TestingAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 class AuthControllerTest {
 

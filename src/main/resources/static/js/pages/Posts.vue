@@ -117,7 +117,11 @@ export default {
       formData.append('image', this.image);
 
       if (this.id) {
-        axios.put(`/api/posts/${this.id}`, formData)
+        axios.put(`/api/posts/${this.id}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
             .then(response => {
               let index = this.posts.findIndex(item => item.id === response.data.id)
               this.posts.splice(index, 1, response.data);
@@ -130,7 +134,11 @@ export default {
               }
             })
       } else {
-        axios.post(`/api/posts`, formData)
+        axios.post(`/api/posts`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
             .then(response => {
               this.posts.push(response.data)
             })

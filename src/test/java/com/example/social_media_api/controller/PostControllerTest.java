@@ -1,10 +1,12 @@
 package com.example.social_media_api.controller;
 
 import com.example.social_media_api.domain.dto.PostDto;
+import com.example.social_media_api.domain.entity.User;
 import com.example.social_media_api.exception.AccessDeniedException;
 import com.example.social_media_api.exception.PostNotFoundException;
 import com.example.social_media_api.security.UserDetailsImpl;
 import com.example.social_media_api.service.PostService;
+import com.example.social_media_api.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -20,6 +22,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
 
 class PostControllerTest {
 
@@ -30,6 +33,9 @@ class PostControllerTest {
     private PostService postService;
 
     @Mock
+    private UserService userService;
+
+    @Mock
     private UserDetailsImpl authenticatedUser;
 
     @BeforeEach
@@ -38,24 +44,24 @@ class PostControllerTest {
     }
 
     @Test
-    public void testFindAllPosts() {
+    public void findAllPosts() {
         List<PostDto> posts = new ArrayList<>();
-        posts.add(new PostDto());
-        posts.add(new PostDto());
+        PostDto post = new PostDto();
+        post.setId(1L);
+        posts.add(post);
 
         when(postService.findAllPosts()).thenReturn(posts);
 
-        List<PostDto> result = postController.findAllPosts();
+        ResponseEntity<?> result = postController.findAllPosts();
 
-        assertEquals(posts.size(), result.size());
-        assertEquals(posts, result);
-
+        assertEquals(posts, result.getBody());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
         verify(postService, times(1)).findAllPosts();
 
     }
 
     @Test
-    public void testFindPostById() throws PostNotFoundException {
+    public void findPostById() {
         Long postId = 1L;
         PostDto post = new PostDto();
 
@@ -63,54 +69,72 @@ class PostControllerTest {
 
         ResponseEntity<?> responseEntity = postController.findPostById(postId);
 
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals(post, responseEntity.getBody());
-
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         verify(postService, times(1)).findPostById(postId);
     }
 
     @Test
-    public void testCreatePost() throws IOException {
-        MockMultipartFile image = new MockMultipartFile("image", "image.jpg", "image/jpeg", "test image".getBytes());
+    public void createPost() {
+        MockMultipartFile image = new MockMultipartFile(
+                "image",
+                "image.jpg",
+                "image/jpeg",
+                "test image".getBytes()
+        );
         PostDto postDto = new PostDto();
+        User user = new User();
 
-        when(postService.createPost(postDto, image, authenticatedUser)).thenReturn(postDto);
+        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(user);
+        when(postService.createPost(postDto, image, user)).thenReturn(postDto);
 
         ResponseEntity<?> responseEntity = postController.createPost(postDto, image, authenticatedUser);
 
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals(postDto, responseEntity.getBody());
-
-        verify(postService, times(1)).createPost(postDto, image, authenticatedUser);
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
+        verify(postService, times(1)).createPost(postDto, image, user);
     }
 
     @Test
-    public void testUpdatePost() throws IOException, PostNotFoundException, AccessDeniedException {
+    public void updatePost() throws IOException, PostNotFoundException, AccessDeniedException {
         Long postId = 1L;
-        MockMultipartFile image = new MockMultipartFile("image", "image.jpg", "image/jpeg", "test image".getBytes());
+        MockMultipartFile image = new MockMultipartFile(
+                "image",
+                "image.jpg",
+                "image/jpeg",
+                "test image".getBytes()
+        );
         PostDto postDto = new PostDto();
+        User sameAuthor = new User();
 
-        when(postService.updatePost(postId, postDto, image, authenticatedUser)).thenReturn(postDto);
+        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(sameAuthor);
+        when(postService.getAuthorFromPostByPostId(postId)).thenReturn(sameAuthor);
+        when(postService.updatePost(postId, postDto, image)).thenReturn(postDto);
 
         ResponseEntity<?> responseEntity = postController.updatePost(postId, postDto, image, authenticatedUser);
 
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals(postDto, responseEntity.getBody());
-
-        verify(postService, times(1)).updatePost(postId, postDto, image, authenticatedUser);
-
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
+        verify(postService, times(1)).getAuthorFromPostByPostId(postId);
+        verify(postService, times(1)).updatePost(postId, postDto, image);
     }
 
     @Test
-    public void testDeletePost() throws PostNotFoundException, AccessDeniedException, IOException {
+    public void deletePost() throws PostNotFoundException, AccessDeniedException, IOException {
         Long postId = 1L;
+        User author = new User();
+
+        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(author);
+        when(postService.getAuthorFromPostByPostId(postId)).thenReturn(author);
 
         ResponseEntity<?> responseEntity = postController.deletePost(postId, authenticatedUser);
 
+        assertEquals("Post deleted successfully", responseEntity.getBody());
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("Post delete successfully", responseEntity.getBody());
-
-        verify(postService, times(1)).deletePost(postId, authenticatedUser);
+        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
+        verify(postService, times(1)).deletePost(postId);
 
     }
 }

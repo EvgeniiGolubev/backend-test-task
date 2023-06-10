@@ -1,10 +1,12 @@
 package com.example.social_media_api.controller;
 
 import com.example.social_media_api.domain.dto.UserDto;
+import com.example.social_media_api.domain.entity.User;
 import com.example.social_media_api.exception.AccessDeniedException;
 import com.example.social_media_api.response.ResponseMessage;
 import com.example.social_media_api.security.UserDetailsImpl;
 import com.example.social_media_api.service.ProfileService;
+import com.example.social_media_api.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -28,10 +30,12 @@ import java.util.Set;
 @RequestMapping("/api/profile")
 public class ProfileController {
     private final ProfileService profileService;
+    private final UserService userService;
 
     @Autowired
-    public ProfileController(ProfileService profileService) {
+    public ProfileController(ProfileService profileService, UserService userService) {
         this.profileService = profileService;
+        this.userService = userService;
     }
 
     @Operation(summary = "Get user profile", description = "Get the profile of the authenticated user")
@@ -42,11 +46,14 @@ public class ProfileController {
             )
     })
     @GetMapping
-    public UserDto getUserProfile(
+    public ResponseEntity<?> getUserProfile(
             @Parameter(hidden = true)
-            @AuthenticationPrincipal UserDetailsImpl user
+            @AuthenticationPrincipal UserDetailsImpl authenticatedUser
     ) {
-        return profileService.getUserDto(user);
+        User user = userService.getUserFromUserDetails(authenticatedUser);
+
+        UserDto userDto = profileService.getUserDto(user);
+        return new ResponseEntity<>(userDto, HttpStatus.OK);
     }
 
     @Operation(summary = "Get user subscriptions", description = "Get the subscriptions list of the authenticated user")
@@ -57,11 +64,14 @@ public class ProfileController {
             )
     })
     @GetMapping("/subscriptions")
-    public List<UserDto> getUserSubscriptions(
+    public ResponseEntity<?> getUserSubscriptions(
             @Parameter(hidden = true)
-            @AuthenticationPrincipal UserDetailsImpl user
+            @AuthenticationPrincipal UserDetailsImpl authenticatedUser
     ) {
-        return profileService.getUserSubscriptions(user);
+        User user = userService.getUserFromUserDetails(authenticatedUser);
+
+        List<UserDto> subscriptions = profileService.getUserSubscriptions(user);
+        return new ResponseEntity<>(subscriptions, HttpStatus.OK);
     }
 
     @Operation(summary = "Get user subscribers", description = "Get the subscribers list of the authenticated user")
@@ -72,11 +82,14 @@ public class ProfileController {
             )
     })
     @GetMapping("/subscribers")
-    public List<UserDto> getUserSubscribers(
+    public ResponseEntity<?> getUserSubscribers(
             @Parameter(hidden = true)
-            @AuthenticationPrincipal UserDetailsImpl user
+            @AuthenticationPrincipal UserDetailsImpl authenticatedUser
     ) {
-        return profileService.getUserSubscribers(user);
+        User user = userService.getUserFromUserDetails(authenticatedUser);
+
+        List<UserDto> subscribers = profileService.getUserSubscribers(user);
+        return new ResponseEntity<>(subscribers, HttpStatus.OK);
     }
 
     @Operation(summary = "Get user friends", description = "Get the friends list of the authenticated user")
@@ -87,11 +100,14 @@ public class ProfileController {
             )
     })
     @GetMapping("/friends")
-    public Set<UserDto> getUserFriends(
+    public ResponseEntity<?> getUserFriends(
             @Parameter(hidden = true)
-            @AuthenticationPrincipal UserDetailsImpl user
+            @AuthenticationPrincipal UserDetailsImpl authenticatedUser
     ) {
-        return profileService.getUserFriends(user);
+        User user = userService.getUserFromUserDetails(authenticatedUser);
+
+        Set<UserDto> friends = profileService.getUserFriends(user);
+        return new ResponseEntity<>(friends, HttpStatus.OK);
     }
 
     @Operation(
@@ -102,7 +118,7 @@ public class ProfileController {
             @ApiResponse(
                     responseCode = "200", description = "Channel subscription status changed successfully",
                     content = @Content(schema = @Schema(implementation = ResponseMessage.class),
-                    examples = { @ExampleObject(value = "{ \"message\": \"Channel subscription status changed successfully\" }") })
+                    examples = { @ExampleObject(value = "{ \"message\": \"Subscription changed successfully\" }") })
             ),
             @ApiResponse(
                     responseCode = "400", description = "Invalid channel ID or attempt to subscribe to yourself",
@@ -113,16 +129,23 @@ public class ProfileController {
     @PostMapping("/change-subscription/{channelId}")
     public ResponseEntity<?> changeSubscription(
             @Parameter(hidden = true)
-            @AuthenticationPrincipal UserDetailsImpl subscriber,
+            @AuthenticationPrincipal UserDetailsImpl authenticatedUser,
 
             @Parameter(description = "channel ID")
             @PathVariable("channelId") Long channelId,
 
             @Parameter(description = "Subscribe or unsubscribe from a channel (true if subscribe, false if unsubscribe)")
-            @RequestParam("subscribe") Boolean isSubscribe
+            @RequestParam("subscribe") Boolean subscriptionStatus
     ) {
-        profileService.changeSubscription(channelId, subscriber, isSubscribe);
-        return new ResponseEntity<>("Channel subscription status changed successfully", HttpStatus.OK);
+        User subscriber = userService.getUserFromUserDetails(authenticatedUser);
+        User channel = userService.findUserById(channelId);
+
+        if (channel.equals(subscriber)) {
+            throw new AccessDeniedException("You can not follow yourself");
+        }
+
+        profileService.changeSubscription(channel, subscriber, subscriptionStatus);
+        return new ResponseEntity<>("Subscription changed successfully", HttpStatus.OK);
     }
 
     @Operation(
@@ -142,17 +165,24 @@ public class ProfileController {
             )
     })
     @PostMapping("/change-status/{subscriberId}")
-    public ResponseEntity<?> changeSubscriptionStatus(
+    public ResponseEntity<?> changeSubscriberStatus(
             @Parameter(hidden = true)
-            @AuthenticationPrincipal UserDetailsImpl chanel,
+            @AuthenticationPrincipal UserDetailsImpl authenticatedUser,
 
             @Parameter(description = "subscriber ID")
             @PathVariable("subscriberId") Long subscriberId,
 
             @Parameter(description = "Accept or reject a subscriber (true if accept, false if reject)")
-            @RequestParam("status") Boolean status
+            @RequestParam("status") Boolean subscriberStatus
     ) {
-        profileService.changeSubscriptionStatus(chanel, subscriberId, status);
-        return new ResponseEntity<>("Status subscription changed successfully", HttpStatus.OK);
+        User channel = userService.getUserFromUserDetails(authenticatedUser);
+        User subscriber = userService.findUserById(subscriberId);
+
+        if (channel.equals(subscriber)) {
+            throw new AccessDeniedException("You can not follow yourself");
+        }
+
+        profileService.changeSubscriberStatus(subscriber, channel, subscriberStatus);
+        return new ResponseEntity<>("Subscriber status changed successfully", HttpStatus.OK);
     }
 }

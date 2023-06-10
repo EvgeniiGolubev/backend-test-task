@@ -89,18 +89,11 @@ public class Post {
         if (this == o) return true;
         if (!(o instanceof Post post)) return false;
 
-        if (getId() != null ? !getId().equals(post.getId()) : post.getId() != null) return false;
-        if (getTitle() != null ? !getTitle().equals(post.getTitle()) : post.getTitle() != null) return false;
-        if (getContent() != null ? !getContent().equals(post.getContent()) : post.getContent() != null) return false;
-        return getAuthor() != null ? getAuthor().equals(post.getAuthor()) : post.getAuthor() == null;
+        return getId() != null ? getId().equals(post.getId()) : post.getId() == null;
     }
 
     @Override
     public int hashCode() {
-        int result = getId() != null ? getId().hashCode() : 0;
-        result = 31 * result + (getTitle() != null ? getTitle().hashCode() : 0);
-        result = 31 * result + (getContent() != null ? getContent().hashCode() : 0);
-        result = 31 * result + (getAuthor() != null ? getAuthor().hashCode() : 0);
-        return result;
+        return getId() != null ? getId().hashCode() : 0;
     }
 }

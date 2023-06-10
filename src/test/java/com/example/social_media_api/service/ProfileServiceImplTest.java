@@ -4,13 +4,13 @@ import com.example.social_media_api.domain.dto.UserDto;
 import com.example.social_media_api.domain.entity.Role;
 import com.example.social_media_api.domain.entity.User;
 import com.example.social_media_api.domain.entity.UserSubscription;
-import com.example.social_media_api.exception.AccessDeniedException;
+import com.example.social_media_api.repository.UserRepository;
 import com.example.social_media_api.repository.UserSubscriptionRepository;
-import com.example.social_media_api.security.UserDetailsImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -21,15 +21,13 @@ import java.util.stream.Collectors;
 
 class ProfileServiceImplTest {
     @Mock
-    private UserService userService;
-    @Mock
     private UserSubscriptionRepository userSubscriptionRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private ProfileServiceImpl profileService;
-    @Mock
-    private UserDetailsImpl authenticatedUser;
-    @Mock
-    private User userFromDb;
 
     @BeforeEach
     void setUp() {
@@ -37,85 +35,80 @@ class ProfileServiceImplTest {
     }
 
     @Test
-    void getUserFromUserDetailsImplAndConvertToUserDto() {
-        UserDto expectedUserDto = new UserDto(userFromDb);
+    void getUserDto() {
+        User user = new User();
+        UserDto expected = new UserDto(user);
 
-        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(userFromDb);
+        UserDto resultUserDto = profileService.getUserDto(user);
 
-        UserDto resultUserDto = profileService.getUserDto(authenticatedUser);
-
-        assertEquals(expectedUserDto, resultUserDto);
-        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
+        assertEquals(expected, resultUserDto);
     }
 
     @Test
-    void getUserSubscriptionsFromUserDetailsImplAndConvertToUserDtoList() {
+    void getUserSubscriptions() {
+        User channel = new User();
+        User subscriber = new User();
         List<UserSubscription> subscriptions = new ArrayList<>() {{
-            add(new UserSubscription(new User(), userFromDb));
-            add(new UserSubscription(new User(), userFromDb));
+            add(new UserSubscription(channel, subscriber));
+            add(new UserSubscription(channel, subscriber));
         }};
 
-        List<UserDto> expectedChannelDtos = subscriptions.stream()
+        List<UserDto> expected = subscriptions.stream()
                 .map(sub -> new UserDto(sub.getChannel()))
                 .toList();
 
-        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(userFromDb);
-        when(userSubscriptionRepository.findBySubscriber(userFromDb)).thenReturn(subscriptions);
+        when(userSubscriptionRepository.findBySubscriber(subscriber)).thenReturn(subscriptions);
 
-        List<UserDto> resultChannelDtos = profileService.getUserSubscriptions(authenticatedUser);
+        List<UserDto> result = profileService.getUserSubscriptions(subscriber);
 
-        assertEquals(expectedChannelDtos, resultChannelDtos);
-
-        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
-        verify(userSubscriptionRepository, times(1)).findBySubscriber(userFromDb);
+        assertEquals(expected, result);
+        verify(userSubscriptionRepository, times(1)).findBySubscriber(subscriber);
     }
 
     @Test
-    void getUserSubscribersFromUserDetailsImplAndConvertToUserDtoList() {
+    void getUserSubscribers() {
+        User channel = new User();
+        User subscriber = new User();
         List<UserSubscription> subscribers = new ArrayList<>() {{
-            add(new UserSubscription(userFromDb, new User()));
-            add(new UserSubscription(userFromDb, new User()));
+            add(new UserSubscription(channel, subscriber));
+            add(new UserSubscription(channel, subscriber));
         }};
 
-        List<UserDto> expectedSubscriberDtos = subscribers.stream()
+        List<UserDto> expected = subscribers.stream()
                 .map(sub -> new UserDto(sub.getSubscriber()))
                 .toList();
 
-        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(userFromDb);
-        when(userSubscriptionRepository.findByChannel(userFromDb)).thenReturn(subscribers);
+        when(userSubscriptionRepository.findByChannel(channel)).thenReturn(subscribers);
 
-        List<UserDto> resultSubscriberDtos = profileService.getUserSubscribers(authenticatedUser);
+        List<UserDto> result = profileService.getUserSubscribers(channel);
 
-        assertEquals(expectedSubscriberDtos, resultSubscriberDtos);
-        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
-        verify(userSubscriptionRepository, times(1)).findByChannel(userFromDb);
+        assertEquals(expected, result);
+        verify(userSubscriptionRepository, times(1)).findByChannel(channel);
     }
 
     @Test
     void getUserFriendsFromUserDetailsImplAndConvertToUserDtoList() {
+        User user = Mockito.mock(User.class);
         Set<User> friends = new HashSet<>() {{
             add(new User());
             add(new User());
         }};
 
-        Set<UserDto> expectedUserDtos = friends.stream()
+        Set<UserDto> expected = friends.stream()
                 .map(UserDto::new)
                 .collect(Collectors.toSet());
 
-        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(userFromDb);
-        when(userFromDb.getFriends()).thenReturn(friends);
+        when(user.getFriends()).thenReturn(friends);
 
-        Set<UserDto> resultUserDtos = profileService.getUserFriends(authenticatedUser);
+        Set<UserDto> result = profileService.getUserFriends(user);
 
-        assertEquals(expectedUserDtos, resultUserDtos);
-        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
-        verify(userFromDb, times(1)).getFriends();
+        assertEquals(expected, result);
+        verify(user, times(1)).getFriends();
     }
 
     @Test
-    void subscribeOnChannelAndChannelNotSubscribedOnUser() {
-        Long channelId = 1L;
-        Boolean isSubscribe = true;
+    void changeSubscriptionTrueAndChannelNotSubscribedOnUser() {
+        Boolean subscriptionStatus = true;
 
         User channel = new User(
                 "channel@mail.ru", "channel",
@@ -126,27 +119,21 @@ class ProfileServiceImplTest {
                 "subscriber", Collections.singleton(Role.USER)
         );
 
-        when(userService.findUserById(channelId)).thenReturn(channel);
-        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(subscriber);
         when(userSubscriptionRepository.findByChannelAndSubscriber(subscriber, channel)).thenReturn(null);
 
-        profileService.changeSubscription(channelId, authenticatedUser, isSubscribe);
+        profileService.changeSubscription(channel, subscriber, subscriptionStatus);
 
         assertTrue(channel.getSubscribers().contains(new UserSubscription(channel, subscriber)));
         assertFalse(channel.getSubscriptions().contains(new UserSubscription(subscriber, channel)));
         assertFalse(channel.getFriends().contains(subscriber));
         assertFalse(subscriber.getFriends().contains(channel));
-
-        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
-        verify(userService, times(1)).findUserById(channelId);
         verify(userSubscriptionRepository, times(1)).findByChannelAndSubscriber(subscriber, channel);
-        verify(userService, times(2)).updateUser(any(User.class));
+        verify(userRepository, times(1)).saveAll(List.of(channel, subscriber));
     }
 
     @Test
-    void subscribeOnChannelAndChannelSubscribedOnUser() {
-        Long channelId = 1L;
-        Boolean isSubscribe = true;
+    void changeSubscriptionTrueAndChannelSubscribedOnUser() {
+        Boolean subscriptionStatus = true;
 
         User channel = new User(
                 "channel@mail.ru", "channel",
@@ -160,27 +147,21 @@ class ProfileServiceImplTest {
         UserSubscription subscription = new UserSubscription(subscriber, channel);
         channel.setSubscriptions(Collections.singleton(subscription));
 
-        when(userService.findUserById(channelId)).thenReturn(channel);
-        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(subscriber);
         when(userSubscriptionRepository.findByChannelAndSubscriber(subscriber, channel)).thenReturn(subscription);
 
-        profileService.changeSubscription(channelId, authenticatedUser, isSubscribe);
+        profileService.changeSubscription(channel, subscriber, subscriptionStatus);
 
         assertTrue(channel.getSubscribers().contains(new UserSubscription(channel, subscriber)));
         assertTrue(channel.getSubscriptions().contains(subscription));
         assertTrue(channel.getFriends().contains(subscriber));
         assertTrue(subscriber.getFriends().contains(channel));
-
-        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
-        verify(userService, times(1)).findUserById(channelId);
         verify(userSubscriptionRepository, times(1)).findByChannelAndSubscriber(subscriber, channel);
-        verify(userService, times(2)).updateUser(any(User.class));
+        verify(userRepository, times(1)).saveAll(List.of(channel, subscriber));
     }
 
     @Test
-    void unsubscribeOnChannelAndChannelNotSubscribedOnUser() {
-        Long channelId = 1L;
-        Boolean isSubscribe = false;
+    void changeSubscriptionFalseAndChannelNotSubscribedOnUser() {
+        Boolean subscriptionStatus = false;
 
         User channel = new User(
                 "channel@mail.ru", "channel",
@@ -191,25 +172,18 @@ class ProfileServiceImplTest {
                 "subscriber", Collections.singleton(Role.USER)
         );
 
-        when(userService.findUserById(channelId)).thenReturn(channel);
-        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(subscriber);
-
-        profileService.changeSubscription(channelId, authenticatedUser, isSubscribe);
+        profileService.changeSubscription(channel, subscriber, subscriptionStatus);
 
         assertFalse(channel.getSubscribers().contains(new UserSubscription(channel, subscriber)));
         assertFalse(channel.getSubscriptions().contains(new UserSubscription(subscriber, channel)));
         assertFalse(channel.getFriends().contains(subscriber));
         assertFalse(subscriber.getFriends().contains(channel));
-
-        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
-        verify(userService, times(1)).findUserById(channelId);
-        verify(userService, times(2)).updateUser(any(User.class));
+        verify(userRepository, times(1)).saveAll(List.of(channel, subscriber));
     }
 
     @Test
-    void unsubscribeOnChannelAndChannelSubscribedOnUser() {
-        Long channelId = 1L;
-        Boolean isSubscribe = false;
+    void changeSubscriptionFalseAndChannelSubscribedOnUser() {
+        Boolean subscriptionStatus = false;
 
         User channel = new User(
                 "channel@mail.ru", "channel",
@@ -223,42 +197,18 @@ class ProfileServiceImplTest {
         UserSubscription subscription = new UserSubscription(subscriber, channel);
         channel.setSubscriptions(Collections.singleton(subscription));
 
-        when(userService.findUserById(channelId)).thenReturn(channel);
-        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(subscriber);
-
-        profileService.changeSubscription(channelId, authenticatedUser, isSubscribe);
+        profileService.changeSubscription(channel, subscriber, subscriptionStatus);
 
         assertFalse(channel.getSubscribers().contains(new UserSubscription(channel, subscriber)));
         assertTrue(channel.getSubscriptions().contains(subscription));
         assertFalse(channel.getFriends().contains(subscriber));
         assertFalse(subscriber.getFriends().contains(channel));
-
-        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
-        verify(userService, times(1)).findUserById(channelId);
-        verify(userService, times(2)).updateUser(any(User.class));
+        verify(userRepository, times(1)).saveAll(List.of(channel, subscriber));
     }
 
     @Test
-    void changeSubscriptionOnYourselfAndThrowsAccessDeniedException() {
-        Long channelId = 1L;
-        Boolean isSubscribe = true;
-
-        when(userService.findUserById(channelId)).thenReturn(userFromDb);
-        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(userFromDb);
-
-        AccessDeniedException exception = assertThrows(
-                AccessDeniedException.class,
-                () -> profileService.changeSubscription(channelId, authenticatedUser, isSubscribe)
-        );
-
-        assertEquals("You can not follow yourself", exception.getMessage());
-        verify(userService, never()).updateUser(userFromDb);
-    }
-
-    @Test
-    void acceptSubscriptionFromSubscriber() {
-        Long subscriberId = 1L;
-        Boolean status = true;
+    void changeSubscriberStatusTrue() {
+        Boolean subscriberStatus = true;
 
         User channel = new User(
                 "channel@mail.ru", "channel",
@@ -274,11 +224,9 @@ class ProfileServiceImplTest {
         channel.setSubscribers(Collections.singleton(subscription));
         subscriber.setSubscriptions(Collections.singleton(subscription));
 
-        when(userService.findUserById(subscriberId)).thenReturn(subscriber);
-        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(channel);
         when(userSubscriptionRepository.findByChannelAndSubscriber(channel, subscriber)).thenReturn(subscription);
 
-        profileService.changeSubscriptionStatus(authenticatedUser, subscriberId, status);
+        profileService.changeSubscriberStatus(subscriber, channel, subscriberStatus);
 
         assertTrue(subscription.isActive());
         assertTrue(subscriber.getSubscribers().contains(new UserSubscription(subscriber, channel)));
@@ -286,16 +234,13 @@ class ProfileServiceImplTest {
         assertTrue(subscriber.getFriends().contains(channel));
         assertTrue(channel.getFriends().contains(subscriber));
 
-        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
-        verify(userService, times(1)).findUserById(subscriberId);
-        verify(userService, times(2)).updateUser(any(User.class));
         verify(userSubscriptionRepository, times(1)).findByChannelAndSubscriber(channel, subscriber);
+        verify(userRepository, times(1)).saveAll(List.of(channel, subscriber));
     }
 
     @Test
-    void rejectSubscriptionFromSubscriber() {
-        Long subscriberId = 1L;
-        Boolean status = false;
+    void changeSubscriberStatusFalse() {
+        Boolean subscriberStatus = false;
 
         User channel = new User(
                 "channel@mail.ru", "channel",
@@ -311,11 +256,9 @@ class ProfileServiceImplTest {
         channel.setSubscribers(Collections.singleton(subscription));
         subscriber.setSubscriptions(Collections.singleton(subscription));
 
-        when(userService.findUserById(subscriberId)).thenReturn(subscriber);
-        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(channel);
         when(userSubscriptionRepository.findByChannelAndSubscriber(channel, subscriber)).thenReturn(subscription);
 
-        profileService.changeSubscriptionStatus(authenticatedUser, subscriberId, status);
+        profileService.changeSubscriberStatus(subscriber, channel, subscriberStatus);
 
         assertFalse(subscription.isActive());
         assertTrue(channel.getSubscribers().contains(new UserSubscription(channel, subscriber)));
@@ -323,16 +266,13 @@ class ProfileServiceImplTest {
         assertFalse(channel.getFriends().contains(subscriber));
         assertFalse(subscriber.getFriends().contains(channel));
 
-        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
-        verify(userService, times(1)).findUserById(subscriberId);
-        verify(userService, times(2)).updateUser(any(User.class));
         verify(userSubscriptionRepository, times(1)).findByChannelAndSubscriber(channel, subscriber);
+        verify(userRepository, times(1)).saveAll(List.of(channel, subscriber));
     }
 
     @Test
     void rejectSubscriptionFromSubscriberIfUsersFriends() {
-        Long subscriberId = 1L;
-        Boolean status = false;
+        Boolean subscriberStatus = false;
 
         User channel = new User(
                 "channel@mail.ru", "channel",
@@ -350,11 +290,9 @@ class ProfileServiceImplTest {
         channel.getFriends().add(subscriber);
         subscriber.getFriends().add(channel);
 
-        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(channel);
-        when(userService.findUserById(subscriberId)).thenReturn(subscriber);
         when(userSubscriptionRepository.findByChannelAndSubscriber(channel, subscriber)).thenReturn(subscription);
 
-        profileService.changeSubscriptionStatus(authenticatedUser, subscriberId, status);
+        profileService.changeSubscriberStatus(subscriber, channel, subscriberStatus);
 
         assertFalse(subscription.isActive());
         assertTrue(channel.getSubscribers().contains(new UserSubscription(channel, subscriber)));
@@ -362,29 +300,7 @@ class ProfileServiceImplTest {
         assertFalse(channel.getFriends().contains(subscriber));
         assertFalse(subscriber.getFriends().contains(channel));
 
-        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
-        verify(userService, times(1)).findUserById(subscriberId);
-        verify(userService, times(2)).updateUser(any(User.class));
         verify(userSubscriptionRepository, times(1)).findByChannelAndSubscriber(channel, subscriber);
-    }
-
-    @Test
-    void changeSubscriptionStatusForYourselfAndThrowsAccessDeniedException() {
-        Long subscriberId = 1L;
-        Boolean status = true;
-
-        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(userFromDb);
-        when(userService.findUserById(subscriberId)).thenReturn(userFromDb);
-
-        AccessDeniedException exception = assertThrows(
-                AccessDeniedException.class,
-                () -> profileService.changeSubscriptionStatus(authenticatedUser, subscriberId, status)
-        );
-
-        assertEquals("You can not follow yourself", exception.getMessage());
-
-        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
-        verify(userService, times(1)).findUserById(subscriberId);
-        verify(userService, never()).updateUser(userFromDb);
+        verify(userRepository, times(1)).saveAll(List.of(channel, subscriber));
     }
 }

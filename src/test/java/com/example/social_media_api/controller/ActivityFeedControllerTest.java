@@ -1,8 +1,10 @@
 package com.example.social_media_api.controller;
 
 import com.example.social_media_api.domain.dto.PostDto;
+import com.example.social_media_api.domain.entity.User;
 import com.example.social_media_api.security.UserDetailsImpl;
 import com.example.social_media_api.service.PostService;
+import com.example.social_media_api.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -24,6 +26,9 @@ class ActivityFeedControllerTest {
     @Mock
     private PostService postService;
 
+    @Mock
+    private UserService userService;
+
     @InjectMocks
     private ActivityFeedController activityFeedController;
 
@@ -33,15 +38,19 @@ class ActivityFeedControllerTest {
     }
 
     @Test
-    public void testGetActivityFeed_Success() {
-        UserDetailsImpl user = new UserDetailsImpl();
+    public void testGetActivityFeed() {
+        UserDetailsImpl authenticatedUser = new UserDetailsImpl();
+        User user = new User();
+
         String sortType = "date";
         int page = 1;
         int pageSize = 10;
         Page<PostDto> posts = new PageImpl<>(Collections.singletonList(new PostDto()), PageRequest.of(page, pageSize), 1);
+
+        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(user);
         when(postService.getPostsBySubscriber(user, sortType, page, pageSize)).thenReturn(posts);
 
-        ResponseEntity<?> responseEntity = activityFeedController.getActivityFeed(user, sortType, page, pageSize);
+        ResponseEntity<?> responseEntity = activityFeedController.getActivityFeed(authenticatedUser, sortType, page, pageSize);
 
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals(posts, responseEntity.getBody());

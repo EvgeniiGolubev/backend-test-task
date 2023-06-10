@@ -1,10 +1,12 @@
 package com.example.social_media_api.controller;
 
 import com.example.social_media_api.domain.dto.UserDto;
+import com.example.social_media_api.domain.entity.User;
 import com.example.social_media_api.exception.AccessDeniedException;
 import com.example.social_media_api.exception.UserNotFoundException;
 import com.example.social_media_api.security.UserDetailsImpl;
 import com.example.social_media_api.service.ProfileService;
+import com.example.social_media_api.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -18,8 +20,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
 
 class ProfileControllerTest {
     @InjectMocks
@@ -31,86 +34,121 @@ class ProfileControllerTest {
     @Mock
     private UserDetailsImpl authenticatedUser;
 
+    @Mock
+    private UserService userService;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    public void testGetUserProfile() {
+    public void getUserProfile() {
+        User user = new User();
         UserDto expectedUserDto = new UserDto();
 
-        when(profileService.getUserDto(authenticatedUser)).thenReturn(expectedUserDto);
+        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(user);
+        when(profileService.getUserDto(user)).thenReturn(expectedUserDto);
 
-        UserDto result = profileController.getUserProfile(authenticatedUser);
+        ResponseEntity<?> result = profileController.getUserProfile(authenticatedUser);
 
-        assertEquals(expectedUserDto, result);
-        verify(profileService, times(1)).getUserDto(authenticatedUser);
+        assertEquals(expectedUserDto, result.getBody());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
+        verify(profileService, times(1)).getUserDto(user);
     }
 
     @Test
-    public void testGetUserSubscriptions() {
+    public void getUserSubscriptions() {
         List<UserDto> expectedSubscriptions = new ArrayList<>();
+        User user = new User();
 
-        when(profileService.getUserSubscriptions(authenticatedUser)).thenReturn(expectedSubscriptions);
+        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(user);
+        when(profileService.getUserSubscriptions(user)).thenReturn(expectedSubscriptions);
 
-        List<UserDto> result = profileController.getUserSubscriptions(authenticatedUser);
+        ResponseEntity<?> result = profileController.getUserSubscriptions(authenticatedUser);
 
-        assertEquals(expectedSubscriptions, result);
-        verify(profileService, times(1)).getUserSubscriptions(authenticatedUser);
+        assertEquals(expectedSubscriptions, result.getBody());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
+        verify(profileService, times(1)).getUserSubscriptions(user);
     }
 
     @Test
-    public void testGetUserSubscribers() {
+    public void getUserSubscribers() {
         List<UserDto> expectedSubscribers = new ArrayList<>();
+        User user = new User();
 
-        when(profileService.getUserSubscribers(authenticatedUser)).thenReturn(expectedSubscribers);
+        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(user);
+        when(profileService.getUserSubscribers(user)).thenReturn(expectedSubscribers);
 
-        List<UserDto> result = profileController.getUserSubscribers(authenticatedUser);
+        ResponseEntity<?> result = profileController.getUserSubscribers(authenticatedUser);
 
-        assertEquals(expectedSubscribers, result);
-        verify(profileService, times(1)).getUserSubscribers(authenticatedUser);
+        assertEquals(expectedSubscribers, result.getBody());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
+        verify(profileService, times(1)).getUserSubscribers(user);
     }
 
     @Test
-    public void testGetUserFriends() {
+    public void getUserFriends() {
         Set<UserDto> expectedFriends = new HashSet<>();
+        User user = new User();
 
-        when(profileService.getUserFriends(authenticatedUser)).thenReturn(expectedFriends);
+        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(user);
+        when(profileService.getUserFriends(user)).thenReturn(expectedFriends);
 
-        Set<UserDto> result = profileController.getUserFriends(authenticatedUser);
+        ResponseEntity<?> result = profileController.getUserFriends(authenticatedUser);
 
-        assertEquals(expectedFriends, result);
-        verify(profileService, times(1)).getUserFriends(authenticatedUser);
+        assertEquals(expectedFriends, result.getBody());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
+        verify(profileService, times(1)).getUserFriends(user);
     }
 
     @Test
-    public void testChangeSubscription() throws UserNotFoundException, AccessDeniedException {
+    public void changeSubscription() throws UserNotFoundException, AccessDeniedException {
         Long channelId = 1L;
-        Boolean isSubscribe = true;
+        Boolean subscriptionStatus = true;
 
-        ResponseEntity<?> expectedResponse = new ResponseEntity<>("Channel subscription status changed successfully", HttpStatus.OK);
+        User subscriber = new User();
+        subscriber.setId(2L);
+        User channel = new User();
+        channel.setId(channelId);
 
-        doNothing().when(profileService).changeSubscription(channelId, authenticatedUser, isSubscribe);
+        ResponseEntity<?> expectedResponse = new ResponseEntity<>("Subscription changed successfully", HttpStatus.OK);
 
-        ResponseEntity<?> result = profileController.changeSubscription(authenticatedUser, channelId, isSubscribe);
+        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(subscriber);
+        when(userService.findUserById(channelId)).thenReturn(channel);
+
+        ResponseEntity<?> result = profileController.changeSubscription(authenticatedUser, channelId, subscriptionStatus);
 
         assertEquals(expectedResponse, result);
-        verify(profileService, times(1)).changeSubscription(channelId, authenticatedUser, isSubscribe);
+        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
+        verify(userService, times(1)).findUserById(channelId);
+        verify(profileService, times(1)).changeSubscription(channel, subscriber, subscriptionStatus);
     }
 
     @Test
-    public void testChangeSubscriptionStatus() throws UserNotFoundException, AccessDeniedException {
+    public void changeSubscriberStatus() throws UserNotFoundException, AccessDeniedException {
         Long subscriberId = 1L;
-        Boolean status = true;
+        Boolean subscriberStatus = true;
 
-        ResponseEntity<?> expectedResponse = new ResponseEntity<>("Status subscription changed successfully", HttpStatus.OK);
+        User subscriber = new User();
+        subscriber.setId(subscriberId);
+        User channel = new User();
+        channel.setId(2L);
 
-        doNothing().when(profileService).changeSubscriptionStatus(authenticatedUser, subscriberId, status);
+        ResponseEntity<?> expectedResponse = new ResponseEntity<>("Subscriber status changed successfully", HttpStatus.OK);
 
-        ResponseEntity<?> result = profileController.changeSubscriptionStatus(authenticatedUser, subscriberId, status);
+        when(userService.getUserFromUserDetails(authenticatedUser)).thenReturn(channel);
+        when(userService.findUserById(subscriberId)).thenReturn(subscriber);
+
+        ResponseEntity<?> result = profileController.changeSubscriberStatus(authenticatedUser, subscriberId, subscriberStatus);
 
         assertEquals(expectedResponse, result);
-        verify(profileService, times(1)).changeSubscriptionStatus(authenticatedUser, subscriberId, status);
+        verify(userService, times(1)).getUserFromUserDetails(authenticatedUser);
+        verify(userService, times(1)).findUserById(subscriberId);
+        verify(profileService, times(1)).changeSubscriberStatus(subscriber, channel, subscriberStatus);
     }
 }

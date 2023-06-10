@@ -1,9 +1,11 @@
 package com.example.social_media_api.controller;
 
 import com.example.social_media_api.domain.dto.PostDto;
+import com.example.social_media_api.domain.entity.User;
 import com.example.social_media_api.response.ResponseMessage;
 import com.example.social_media_api.security.UserDetailsImpl;
 import com.example.social_media_api.service.PostService;
+import com.example.social_media_api.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -27,9 +29,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/activity-feed")
 public class ActivityFeedController {
     private final PostService postService;
+    private final UserService userService;
 
-    public ActivityFeedController(PostService postService) {
+    public ActivityFeedController(PostService postService, UserService userService) {
         this.postService = postService;
+        this.userService = userService;
     }
 
     @Operation(summary = "Get activity feed", description = "Get all user posts that a authenticated user is following")
@@ -47,7 +51,7 @@ public class ActivityFeedController {
     @GetMapping
     public ResponseEntity<?> getActivityFeed(
             @Parameter(hidden = true)
-            @AuthenticationPrincipal UserDetailsImpl user,
+            @AuthenticationPrincipal UserDetailsImpl authenticatedUser,
 
             @Parameter(description = "Type of sorting posts by date. Valid values: DESC or ASC.")
             @RequestParam("sortType") String sortType,
@@ -58,6 +62,8 @@ public class ActivityFeedController {
             @Parameter(description = "Current page count. The minimum value is 1.")
             @RequestParam("pageSize") int pageSize
     ) {
+        User user = userService.getUserFromUserDetails(authenticatedUser);
+
         Page<PostDto> posts = postService.getPostsBySubscriber(user, sortType, page, pageSize);
         return new ResponseEntity<>(posts, HttpStatus.OK);
     }
